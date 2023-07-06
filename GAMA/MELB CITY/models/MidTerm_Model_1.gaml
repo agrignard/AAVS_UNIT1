@@ -10,6 +10,7 @@ model tutorial_gis_city_traffic
 global {
 	file shape_file_buildings <- file("../includes/buildings.shp");
 	file shape_file_roads <- file("../includes/roads.shp");
+	file shape_file_rail <- file("../includes/tram_trucks.shp");
 	file shape_file_bounds <- file("../includes/bounds.shp");
 	geometry shape <- envelope(shape_file_bounds);
 	float step <- 1 #mn;
@@ -21,8 +22,11 @@ global {
 	int min_work_end <- 16; 
 	int max_work_end <- 20; 
 	float min_speed <- 1.0 #km / #h;
-	float max_speed <- 10.0 #km / #h; 
+	float max_speed <- 10.0 #km / #h;
+	float min_tram_speed <- 1.0 #km / #h;
+	float max_tram_speed <- 26.0 #km / #h;
 	graph the_graph;
+	graph tram_graph;
 	
 	init {
 		create building from: shape_file_buildings with: [type::string(read ("type"))] {
@@ -32,6 +36,9 @@ global {
 		}
 		create road from: shape_file_roads ;
 		the_graph <- as_edge_graph(road);
+		
+		create rail from: shape_file_rail with: [type::string(read ("type"))];
+		tram_graph <- as_edge_graph (rail where (each.type="tram"));
 		
 		list<building> residential_buildings <- building where (each.type="residential");
 		list<building> industrial_buildings <- building  where (each.type="public_building") ;
@@ -46,6 +53,7 @@ global {
 		}
 		
 		create tram number: nb_tram {
+			speed <- rnd(min_tram_speed, max_tram_speed);
 
 	}
 }
@@ -69,11 +77,28 @@ species road  {
 	}
 }
 
+species rail  {
+	rgb color <- #red ;
+	string type;
+	aspect base {
+		if(type="tram"){
+			draw shape color:#blue ;
+		}
+		if(type="rail"){
+			draw shape color:#green ;
+		}
+	}
+}
+
 species tram skills:[moving] {
+	
+	reflex move {
+		do wander on: tram_graph;
+	}
 
 	aspect base {
-		draw rectangle(3, 20) color: #green border: #black ;
-		draw rectangle(3, 10) color: #white border: #black ;
+		draw rectangle(20, 3) rotate: heading color: #green border: #black ;
+		draw rectangle(10, 3) rotate: heading color: #white border: #black ;
 	}
 }
 
@@ -97,7 +122,7 @@ species people skills:[moving] {
 	} 
 	 
 	reflex move when: the_target != nil {
-		do goto target: the_target on: the_graph ; 
+		do goto target: the_target on: the_graph; 
 		if the_target = location {
 			the_target <- nil ;
 		}
@@ -125,6 +150,7 @@ experiment road_traffic type: gui {
 		display city_display type: 3d {
 			species building aspect: base ;
 			species road aspect: base ;
+			species rail aspect: base ;
 			species people aspect: base ;
 			species tram aspect: base ;
 		}
