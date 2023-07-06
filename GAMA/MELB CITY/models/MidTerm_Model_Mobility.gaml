@@ -10,7 +10,7 @@ model tutorial_gis_city_traffic
 global {
 	file shape_file_buildings <- file("../includes/buildings.shp");
 	file shape_file_roads <- file("../includes/roads.shp");
-	file shape_file_rail <- file("../includes/tram_trucks.shp");
+	file shape_file_rail <- file("../includes/Tram_bounds.shp");
 	file shape_file_bounds <- file("../includes/bounds.shp");
 	geometry shape <- envelope(shape_file_bounds);
 	float step <- 1 #sec;
@@ -55,7 +55,7 @@ species building {
 	rgb color <- #gray  ;
 	
 	aspect base {
-		draw shape color: color ;
+		draw shape color: #gray border:#gray wireframe:true;
 	}
 }
 
@@ -96,7 +96,9 @@ species tram skills:[moving] {
 
 
 experiment road_traffic type: gui {	
+	float minimum_cycle_duration<-0.05;
 	output {
+		
 		display city_display type: 3d {
 			species building aspect: base ;
 			species rail aspect: base ;
