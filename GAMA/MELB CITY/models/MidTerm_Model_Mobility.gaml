@@ -95,7 +95,7 @@ species tram skills:[moving] {
 
 
 
-experiment road_traffic type: gui {	
+experiment Mobility type: gui {	
 	float minimum_cycle_duration<-0.05;
 	output {
 		
