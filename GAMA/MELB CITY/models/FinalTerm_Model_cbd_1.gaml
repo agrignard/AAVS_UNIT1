@@ -8,9 +8,9 @@
 model FinalTermModelcbd1
 
 global {
-	file shape_file_buildings <- file("../includes/cbd_buildings.shp");
-	file shape_file_traffic <- file("../includes/cbd_traffic_system.shp");
-	file shape_file_bounds <- file("../includes/cbd_bounds.shp");
+	file shape_file_buildings <- file("../includes/GIS/cbd_buildings.shp");
+	file shape_file_traffic <- file("../includes/GIS/cbd_traffic_system.shp");
+	file shape_file_bounds <- file("../includes/GIS/cbd_bounds.shp");
 	geometry shape <- envelope(shape_file_bounds);
 	float step <- 1 #mn;
 	field cell <- field(300,300);
