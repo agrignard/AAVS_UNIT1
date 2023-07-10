@@ -12,10 +12,10 @@ model cbdpollution
 
 global {
 //Shapefile of the buildings
-	file shape_file_buildings <- file("../includes/cbd_buildings.shp");
+	file shape_file_buildings <- file("../includes/GIS/cbd_buildings.shp");
 	//Shapefile of the roads
-	file road_shapefile <- file("../includes/cbd_traffic_system.shp");
-	file shape_file_bounds <- file("../includes/cbd_bounds.shp");
+	file road_shapefile <- file("../includes/GIS/cbd_traffic_system.shp");
+	file shape_file_bounds <- file("../includes/GIS/cbd_bounds.shp");
 	//Shape of the environment
 	geometry shape <- envelope(shape_file_bounds);
 	//Step value

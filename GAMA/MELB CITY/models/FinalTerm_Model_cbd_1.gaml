@@ -13,6 +13,7 @@ global {
 	file shape_file_bounds <- file("../includes/cbd_bounds.shp");
 	geometry shape <- envelope(shape_file_bounds);
 	float step <- 1 #mn;
+	field cell <- field(300,300);
 	date starting_date <- date("2023-07-09-00-00-00");
 	int nb_tram <- 50;
 	float min_tram_speed <- 10.0 #km / #h;
@@ -24,8 +25,12 @@ global {
 	int max_work_end <- 20;
 	float min_people_speed <- 4.8 #km / #h;
 	float max_people_speed <- 8.8 #km / #h;
+	int nb_car <- 100;
+	float min_car_speed <- 5 #km / #h;
+	float max_car_speed <- 40 #km / #h;
 	graph footway_graph;
 	graph tramway_graph;
+	graph car_network_graph;
 	
 	init {
 		create building from: shape_file_buildings with: [type::string(read ("type"))] {
@@ -72,7 +77,17 @@ global {
 
 		}
 
-		list<building> residential_buildings <- building where (each.type="residential"or each.type="mixed");
+		create car number: nb_car {
+			speed <- rnd(min_car_speed, max_car_speed);
+
+		}
+		create car_network from: shape_file_traffic with: [type::string(read ("highway"))];
+		ask car_network where (each.type!="driveway"){
+			do die;
+		}
+		car_network_graph <- as_edge_graph (car_network);
+
+		list<building> residential_buildings <- building where (each.type="residential" or each.type="mixed");
 		list<building> industrial_buildings <- building  where (each.type="work" or each.type="university" or each.type="mixed") ;
 		create people number: nb_people {
 			speed <- rnd(min_people_speed, max_people_speed);
@@ -83,6 +98,14 @@ global {
 			objective <- "resting";
 			location <- any_location_in (living_place);
 		}
+	}
+	
+	reflex pollution_evolution {
+		//ask all cells to decrease their level of pollution
+		cell <- cell * 0.8;
+	
+		//diffuse the pollutions to neighbor cells
+		diffuse var: pollution on: cell proportion: 0.9;
 	}
 }
 
@@ -155,6 +178,25 @@ species tram skills:[moving] {
 	}
 }
 
+species car_network {
+	string type; 
+	rgb color <- #black  ;
+	
+	aspect base {
+		draw shape color: color;
+	}
+}
+species car skills:[moving] {
+	int scale<-3;
+	
+	reflex move {
+		do wander on: car_network_graph;
+	}
+
+	aspect base {
+		draw box(5*scale, 1*scale,2*scale) rotate: heading color: #blue border: #black ;
+	}
+}
 
 experiment cbd_digital_twins type: gui {	
 	float minimum_cycle_duration<-0.05;
@@ -170,6 +212,8 @@ experiment cbd_digital_twins type: gui {
 			species people aspect: base;
 			species tramway aspect: base;
 			species tram aspect: base;
+			species car_network aspect: base;
+			species car aspect: base;
 			
 			overlay position: { 50#px,50#px} size: { 1 #px, 1 #px } background: # black border: #black rounded: false
 			{
