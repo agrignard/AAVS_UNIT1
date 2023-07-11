@@ -1,0 +1,3 @@
+car,number,min_speed(km/h),max_speed(km/h),target_location_daytime,target_location_nighttime
+living_in_cbd,13485,10,40,,
+living_outside_cbd,553331,10,40,,

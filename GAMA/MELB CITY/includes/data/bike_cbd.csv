@@ -1,0 +1,3 @@
+bike,number,min_speed(km/h),max_speed(km/h),target_location_daytime,target_location_nighttime
+living_in_cbd,840,8,10,,
+living_outside_cbd,15062,8,10,,
