@@ -252,8 +252,6 @@ experiment cbd_digital_twins type: gui autorun:true{
 	output {
 		
 		display city_display type: 3d axes: false background: rgb(151, 157, 172) {
-			
-
 			rotation angle:-21+180;
 			camera 'default' location: {1111.786,1109.9386,2688.8238} target: {1111.786,1109.8916,0.0};
 			species building aspect: base visible:show_building;
@@ -315,6 +313,92 @@ experiment cbd_digital_twins type: gui autorun:true{
 			}
         	
         	
+		}
+		
+	}
+}
+
+
+experiment cbd_digital_twins_demo type: gui autorun:true{	
+	float minimum_cycle_duration<-0.05;
+	list<rgb> pal <- palette([ #black, #green, #yellow, #orange, #orange, #red, #red, #red]);
+	map<rgb,string> pollutions <- [#green::"Good",#yellow::"Average",#orange::"Bad",#red::"Hazardous"];
+	map<rgb,string> legends <- [rgb(231, 111, 81)::"residential",rgb(42, 157, 143)::"office",rgb(244, 162, 97)::"mixed",rgb(233, 196, 106)::"retail",rgb(38, 70, 83)::"university", rgb(33, 158, 188)::"entertainment"];
+	font text <- font("Arial", 14, #bold);
+	font title <- font("Arial", 18, #bold);
+	
+	output {
+		display table_display type: 3d axes: false background: rgb(151, 157, 172) fullscreen:0{
+			rotation angle:-21+180;
+			camera 'default' location: {1111.786,1109.9386,2688.8238} target: {1111.786,1109.8916,0.0};
+			species building aspect: base visible:show_building;
+			species pedestrian_network aspect: base visible:show_network;
+			species tram_network aspect: base visible:show_network;
+			species car_network aspect: base visible:show_network;
+			species people aspect: age visible:show_people;
+			species tram aspect: base visible:show_tram;
+			species sensor aspect:base visible:show_sensor;
+			species car aspect: base visible:show_car;
+			mesh cell scale: 9 triangulation: true transparency: 0.4 smooth: 3 above: 0.8 color: pal visible:show_heatmap;
+			
+			
+			event "b"  {show_building<-!show_building;}
+			event "t"  {show_tram<-!show_tram;}
+			event "c"  {show_car<-!show_car;}
+			event "n"  {show_network<-!show_network;}
+			event "p"  {show_people<-!show_people;}
+			event "s"  {show_sensor<-!show_sensor;}
+			event "h"  {show_heatmap<-!show_heatmap;}
+			
+			overlay position: { 50#px,50#px} size: { 1 #px, 1 #px } background: # black border: #black rounded: false
+			{
+				draw "CBD ToolKIT v1.0" at: {0,0} color: #white font: font("Helvetica", 50, #bold);
+				
+				draw "Date: " + current_date at: {0,50#px} color: #white font: font("Helvetica", 20, #bold);
+				
+				float y <- 200#px;
+				
+				draw "Building LandUse" at: {0, y} anchor: #top_left  color: #white font: title;
+				y <- y + 50#px;
+                draw rectangle(40#px, 240#px) at: {20#px, y + 100#px} wireframe: true color: #white;
+                loop p over: legends.pairs
+                {
+                    draw square(40#px) at: { 20#px, y } color: rgb(p.key, 0.8) ;
+                    draw p.value at: { 60#px, y} anchor: #left_center color: # white font: text;
+                    y <- y + 40#px;
+                }
+                
+                float x<-0#px;
+                float gapBetweenWord<-100#px;
+                
+                draw "UI/UX (Press the following button)" at: { x,world.shape.height+75#px} color: #white font: font("Helvetica", 20, #bold);
+              
+                draw "(b)uilding (" + show_building + ")" at: { x,world.shape.height+100#px} color: #white font: font("Helvetica", 10, #bold);
+                x<-x+gapBetweenWord;
+                draw "(t)ram (" + show_tram + ")" at: { x,world.shape.height+100#px} color: #white font: font("Helvetica", 10, #bold);
+                x<-x+gapBetweenWord;
+                draw "(c)ar (" + show_car + ")" at: { x,world.shape.height+100#px} color: #white font: font("Helvetica", 10, #bold);
+                x<-x+gapBetweenWord;
+                draw "(n)etwork (" + show_network + ")" at: { x,world.shape.height+100#px} color: #white font: font("Helvetica", 10, #bold);
+                x<-x+gapBetweenWord;
+                draw "(p)eople (" + show_people + ")" at: { x,world.shape.height+100#px} color: #white font: font("Helvetica", 10, #bold);
+                x<-x+gapBetweenWord;
+                draw "(s)ensor (" + show_people + ")" at: { x,world.shape.height+100#px} color: #white font: font("Helvetica", 10, #bold);
+                x<-x+gapBetweenWord;
+                draw "(h)eatmap (" + show_heatmap + ")" at: { x,world.shape.height+100#px} color: #white font: font("Helvetica", 10, #bold);
+                x<-x+gapBetweenWord;
+			}
+        	
+        	
+		}
+		
+		display screen_display type: 3d axes: false background: rgb(151, 157, 172) fullscreen:1{
+			species building aspect: base;
+			overlay position: { 50#px,50#px} size: { 1 #px, 1 #px } background: # black border: #black rounded: false
+			{
+				draw "CBD ToolKIT v1.0" at: {0,0} color: #white font: font("Helvetica", 50, #bold);	
+		    }
+			
 		}
 		
 	}
