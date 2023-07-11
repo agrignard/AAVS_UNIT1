@@ -14,9 +14,11 @@ global {
 	file shape_file_sensors <- file("../includes/GIS/cbd_sensors.shp");
 	file text_file_population <- file("../includes/data/Demographic_CBD.csv");
 	geometry shape <- envelope(shape_file_bounds);
-	float step <- 1 #sec;
+	float step <- 10 #sec;
 	field cell <- field(300,300);
-	date starting_date <- date("2023-07-09-00-00-00");
+	//date starting_date <- date("2023-07-09-00-00-00");
+	date starting_date <- date([2023,7,9,6,0,0]);
+	
 	int nb_tram <- 50;
 	float min_tram_speed <- 10.0 #km / #h;
 	float max_tram_speed <- 26.0 #km / #h;
