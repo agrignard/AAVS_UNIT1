@@ -32,33 +32,12 @@ global {
 	graph tramway_graph;
 	graph car_network_graph;
 	
+	map<string,rgb> landuse_color<-["residential"::rgb(231, 111, 81),"university"::rgb(38, 70, 83), "mixed"::rgb(244, 162, 97), "office"::rgb(42, 157, 143), "retail"::rgb(233, 196, 106)
+		, "entertainment"::rgb(33, 158, 188),"carpark"::rgb(92, 103, 125),"park"::rgb(153, 217, 140)];
+   
+	
 	init {
-		create building from: shape_file_buildings with: [type::string(read ("type"))] {
-			if type="residential" {
-				color <- rgb(231, 111, 81);
-			}
-			if type="university"{
-				color <- rgb(38, 70, 83);
-			}
-			if type="mixed"{
-				color <- rgb(244, 162, 97);
-			}
-			if type="office"{
-				color <- rgb(42, 157, 143);
-			}
-			if type="retail"{
-				color <- rgb(233, 196, 106);
-			}
-			if type="entertainment"{
-				color <- rgb(33, 158, 188);
-			}
-			if type="carpark"{
-				color <- rgb(92, 103, 125);
-			}
-			if type="park"{
-				color <- rgb(153, 217, 140);
-			}
-		}	
+		create building from: shape_file_buildings with: [type::string(read ("type"))] ;	
 		
 		create footway from: shape_file_traffic with: [type::string(read ("highway"))];
 		ask footway where (each.type!="footway"){
@@ -114,7 +93,7 @@ species building {
 	rgb color <- rgb(229, 229, 229) ;
 	
 	aspect base {
-		draw shape color: color;
+		draw shape color: landuse_color[type];
 	}
 }
 
