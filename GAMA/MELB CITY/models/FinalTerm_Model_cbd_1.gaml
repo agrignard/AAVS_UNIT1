@@ -252,6 +252,10 @@ experiment cbd_digital_twins type: gui autorun:true{
 	output {
 		
 		display city_display type: 3d axes: false background: rgb(151, 157, 172) {
+			
+
+			rotation angle:-21+180;
+			camera 'default' location: {1111.786,1109.9386,2688.8238} target: {1111.786,1109.8916,0.0};
 			species building aspect: base visible:show_building;
 			species pedestrian_network aspect: base visible:show_network;
 			species tram_network aspect: base visible:show_network;
