@@ -12,6 +12,7 @@ global {
 	file shape_file_traffic <- file("../includes/GIS/cbd_networks.shp");
 	file shape_file_bounds <- file("../includes/GIS/cbd_bounds.shp");
 	file shape_file_sensors <- file("../includes/GIS/cbd_sensors.shp");
+	file point_file_outside_cbd <- file("../includes/GIS/cbd_coming_from_outside.shp");
 	file text_file_population <- file("../includes/data/Demographic_CBD.csv");
 	file text_file_car <- file("../includes/data/car_cbd.csv");
 	
@@ -37,7 +38,7 @@ global {
 	float reducefactor<-0.1;
 	
 	map<int,string> grouptostring<-[1::"0-14", 2::"15-34",3::"35-64", 4::"65-84",5::"Above 85"];
-	map<int,rgb> age_color<-[1::#red, 2::#green,3::#blue, 4::#pink,5::#yellow,5::#black];
+	map<int,rgb> age_color<-[1::#red, 2::#green,3::#blue, 4::#pink,5::#yellow,5::#black,6::#gray];
 	map<int,float> grouptospeed<-[1::3.3 #km / #h, 2::4.5 #km / #h,3::4.5 #km / #h, 4::3.3 #km / #h,5::3.3 #km / #h];
    
 	
@@ -62,6 +63,8 @@ global {
 		list<building> industrial_buildings <- building  where (each.type="work" or each.type="university" or each.type="mixed") ;
 		list<building> carpark_cbd <- building  where (each.type="residential" or each.type="mixed" or each.type="carpark");
 		
+		create outside_gates from: point_file_outside_cbd;
+		
 		create pedestrian_network from: shape_file_traffic with: [type::string(read ("highway"))];
 		big_graph <- as_edge_graph (pedestrian_network);
 		ask pedestrian_network where (each.type!="footway"){
@@ -76,7 +79,11 @@ global {
 			create people number:int(data_people[1,i])/10{
 			age_group <- int(i+1);
 			speed <- float(data_people[2,i]);
-			location <- any_location_in (one_of(residential_buildings));
+			if(age_group=6){
+				location <- any_location_in (one_of(outside_gates));
+			} else {
+				location <- any_location_in (one_of(residential_buildings));
+			}
 			taffic_mode<<+ [int(data_people[3,i]),int(data_people[4,i]),int(data_people[5,i]),int(data_people[6,i]),int(data_people[7,i])];
 			start_work <- int(data_people[8,i]);
 			end_work <- int(data_people[9,i]);
@@ -107,7 +114,7 @@ global {
 			if(car_group=1){
 				location <- any_location_in (one_of(carpark_cbd));
 			} else {
-				location <- any_location_in (one_of(industrial_buildings));
+				location <- any_location_in (one_of(outside_gates));
 			}
 			}
 		}
@@ -139,6 +146,8 @@ species building {
 		draw shape color: landuse_color[type];
 	}
 }
+
+species outside_gates;
 
 species pedestrian_network{
 	string type; 
