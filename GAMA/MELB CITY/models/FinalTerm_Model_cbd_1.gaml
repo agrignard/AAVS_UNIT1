@@ -13,6 +13,8 @@ global {
 	file shape_file_bounds <- file("../includes/GIS/cbd_bounds.shp");
 	file shape_file_sensors <- file("../includes/GIS/cbd_sensors.shp");
 	file text_file_population <- file("../includes/data/Demographic_CBD.csv");
+	file text_file_car <- file("../includes/data/car_cbd.csv");
+	
 	geometry shape <- envelope(shape_file_bounds);
 	float step <- 10 #sec;
 	field cell <- field(300,300);
@@ -26,9 +28,6 @@ global {
 	int max_work_start <- 8;
 	int min_work_end <- 16; 
 	int max_work_end <- 20;
-	float min_people_speed <- 4.8 #km / #h;
-	float max_people_speed <- 8.8 #km / #h;
-	int nb_car <- 100;
 	float min_car_speed <- 5 #km / #h;
 	float max_car_speed <- 40 #km / #h;
 	graph big_graph;
@@ -60,7 +59,8 @@ global {
 		create building from: shape_file_buildings with: [type::string(read ("type"))] ;
 		
 		list<building> residential_buildings <- building where (each.type="residential" or each.type="mixed");
-		list<building> industrial_buildings <- building  where (each.type="work" or each.type="university" or each.type="mixed") ;	
+		list<building> industrial_buildings <- building  where (each.type="work" or each.type="university" or each.type="mixed") ;
+		list<building> carpark_cbd <- building  where (each.type="residential" or each.type="mixed" or each.type="carpark");
 		
 		create pedestrian_network from: shape_file_traffic with: [type::string(read ("highway"))];
 		big_graph <- as_edge_graph (pedestrian_network);
@@ -70,17 +70,16 @@ global {
 		footway_graph <- as_edge_graph (pedestrian_network);
 		
 		//create people from the demographic file
-		matrix data <- matrix(text_file_population);
-		//loop on the matrix rows (skip the first header line)
-		loop i from: 0 to: data.rows -1{
+		matrix data_people <- matrix(text_file_population);
+		loop i from: 0 to: data_people.rows -1{
 			
-			create people number:int(data[1,i])/10{
+			create people number:int(data_people[1,i])/10{
 			age_group <- int(i+1);
-			speed <- float(data[2,i]);
+			speed <- float(data_people[2,i]);
 			location <- any_location_in (one_of(residential_buildings));
-			taffic_mode<<+ [int(data[3,i]),int(data[4,i]),int(data[5,i]),int(data[6,i]),int(data[7,i])];
-			start_work <- int(data[8,i]);
-			end_work <- int(data[9,i]);
+			taffic_mode<<+ [int(data_people[3,i]),int(data_people[4,i]),int(data_people[5,i]),int(data_people[6,i]),int(data_people[7,i])];
+			start_work <- int(data_people[8,i]);
+			end_work <- int(data_people[9,i]);
 			living_place <- one_of(residential_buildings);
 			working_place <- one_of(industrial_buildings);
 			objective <- "resting";
@@ -100,12 +99,19 @@ global {
 
 		}
 
-		create car number: nb_car {
-			speed <- rnd(min_car_speed, max_car_speed);
-			location <- any_location_in(one_of(building));
-			state <- flip(0.75) ? "ok" : "notok";
-
+		//create car from the car file
+		matrix data_car <- matrix(text_file_car);
+		loop i from: 0 to: data_car.rows -1{
+			create car number: int(data_car[1,i])/100 {
+			car_group <- int(i+1);
+			if(car_group=1){
+				location <- any_location_in (one_of(carpark_cbd));
+			} else {
+				location <- any_location_in (one_of(industrial_buildings));
+			}
+			}
 		}
+		
 		create car_network from: shape_file_traffic with: [type::string(read ("highway"))];
 		ask car_network where (each.type!="driveway"){
 			do die;
@@ -172,8 +178,7 @@ species people skills:[moving] {
 	} 
 	 
 	reflex move when: the_target != nil {
-		do goto target: the_target  on: big_graph ;
-		write "ok it s time to move to " + speed; 
+		do goto target: the_target  on: big_graph ; 
 		if the_target = location {
 			the_target <- nil ;
 		}
@@ -213,8 +218,14 @@ species car_network {
 		draw shape color: color;
 	}
 }
-species car skills:[moving] {
+species car skills:[advanced_driving] {
 	int scale<-3;
+	init {
+		vehicle_length <- 1.9 #m;
+		max_speed <- 40 #km / #h;
+		max_acceleration <- 3.5;
+	}
+	int car_group;
 	point target;
 	float leaving_proba <- 0.05;
 	string state;
