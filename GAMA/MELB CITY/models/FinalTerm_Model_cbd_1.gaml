@@ -32,13 +32,14 @@ global {
 	int nb_car <- 100;
 	float min_car_speed <- 5 #km / #h;
 	float max_car_speed <- 40 #km / #h;
+	graph big_graph;
 	graph footway_graph;
 	graph tramway_graph;
 	graph car_network_graph;
 	float reducefactor<-0.1;
 	
 	map<int,string> grouptostring<-[1::"0-14", 2::"15-34",3::"35-64", 4::"65-84",5::"Above 85"];
-	map<int,rgb> grouptocolor<-[1::#red, 2::#green,3::#blue, 4::#pink,5::#yellow];
+	map<int,rgb> age_color<-[1::#red, 2::#green,3::#blue, 4::#pink,5::#yellow,5::#black];
 	map<int,float> grouptospeed<-[1::3.3 #km / #h, 2::4.5 #km / #h,3::4.5 #km / #h, 4::3.3 #km / #h,5::3.3 #km / #h];
    
 	
@@ -57,13 +58,35 @@ global {
 	
 	
 	init {
-		create building from: shape_file_buildings with: [type::string(read ("type"))] ;	
+		create building from: shape_file_buildings with: [type::string(read ("type"))] ;
+		
+		list<building> residential_buildings <- building where (each.type="residential" or each.type="mixed");
+		list<building> industrial_buildings <- building  where (each.type="work" or each.type="university" or each.type="mixed") ;	
 		
 		create pedestrian_network from: shape_file_traffic with: [type::string(read ("highway"))];
+		big_graph <- as_edge_graph (pedestrian_network);
 		ask pedestrian_network where (each.type!="footway"){
 			do die;
 		}
 		footway_graph <- as_edge_graph (pedestrian_network);
+		
+		//create people from the demographic file
+		matrix data <- matrix(text_file_population);
+		//loop on the matrix rows (skip the first header line)
+		loop i from: 0 to: data.rows -1{
+			
+			create people number:int(data[1,i])/10{
+			age_group <- int(i+1);
+			speed <- float(data[2,i]);
+			location <- any_location_in (one_of(residential_buildings));
+			taffic_mode<<+ [int(data[3,i]),int(data[4,i]),int(data[5,i]),int(data[6,i]),int(data[7,i])];
+			start_work <- int(data[8,i]);
+			end_work <- int(data[9,i]);
+			living_place <- one_of(residential_buildings);
+			working_place <- one_of(industrial_buildings);
+			objective <- "resting";
+			}
+		}	
 		
 		create sensor from:shape_file_sensors with:[name:string(read ("name"))];
 		
@@ -89,9 +112,6 @@ global {
 			do die;
 		}
 		car_network_graph <- as_edge_graph (car_network);
-
-		list<building> residential_buildings <- building where (each.type="residential" or each.type="mixed");
-		list<building> industrial_buildings <- building  where (each.type="work" or each.type="university" or each.type="mixed") ;
 		
 
 		
@@ -140,6 +160,7 @@ species people skills:[moving] {
 	string objective ; 
 	point the_target <- nil ;
 	int age_group;
+	list<int> taffic_mode;
 		
 	reflex time_to_work when: current_date.hour = start_work and objective = "resting"{
 		objective <- "working" ;
@@ -152,14 +173,15 @@ species people skills:[moving] {
 	} 
 	 
 	reflex move when: the_target != nil {
-		do goto target: the_target on: footway_graph ; 
+		do goto target: the_target  on: big_graph ;
+		write "ok it s time to move to " + speed; 
 		if the_target = location {
 			the_target <- nil ;
 		}
 	}
 	
-	aspect base {
-		draw circle(5) color: grouptocolor[age_group] border: #black;
+	aspect age {
+		draw circle(5) color: age_color[age_group] border: #black;
 	}
 }
 
@@ -235,7 +257,7 @@ experiment cbd_digital_twins type: gui autorun:true{
 			species pedestrian_network aspect: base visible:show_network;
 			species tram_network aspect: base visible:show_network;
 			species car_network aspect: base visible:show_network;
-			species people aspect: base visible:show_people;
+			species people aspect: age visible:show_people;
 			species tram aspect: base visible:show_tram;
 			species sensor aspect:base visible:show_sensor;
 			species car aspect: base visible:show_car;
