@@ -19,10 +19,9 @@ global {
 	//date starting_date <- date("2023-07-09-00-00-00");
 	date starting_date <- date([2023,7,9,6,0,0]);
 	
-	int nb_tram <- 50;
+	int nb_tram <- 0;
 	float min_tram_speed <- 10.0 #km / #h;
 	float max_tram_speed <- 26.0 #km / #h;
-	int nb_people <- 1000;
 	int min_work_start <- 6;
 	int max_work_start <- 8;
 	int min_work_end <- 16; 
