@@ -31,6 +31,12 @@ global {
 	graph footway_graph;
 	graph tramway_graph;
 	graph car_network_graph;
+	float reducefactor<-0.1;
+	
+	map<int,string> grouptostring<-[1::"0-14", 2::"15-34",3::"35-64", 4::"65-84",5::"Above 85"];
+	map<int,rgb> grouptocolor<-[1::#red, 2::#green,3::#blue, 4::#pink,5::#yellow];
+	map<int,float> grouptospeed<-[1::3.3 #km / #h, 2::4.5 #km / #h,3::4.5 #km / #h, 4::3.3 #km / #h,5::3.3 #km / #h];
+   
 	
 	map<string,rgb> landuse_color<-["residential"::rgb(231, 111, 81),"university"::rgb(38, 70, 83), "mixed"::rgb(244, 162, 97), "office"::rgb(42, 157, 143), "retail"::rgb(233, 196, 106)
 		, "entertainment"::rgb(33, 158, 188),"carpark"::rgb(92, 103, 125),"park"::rgb(153, 217, 140)];
@@ -68,8 +74,9 @@ global {
 
 		list<building> residential_buildings <- building where (each.type="residential" or each.type="mixed");
 		list<building> industrial_buildings <- building  where (each.type="work" or each.type="university" or each.type="mixed") ;
-		create people number: nb_people {
-			speed <- rnd(min_people_speed, max_people_speed);
+		
+		create people number:1464*reducefactor{
+			age_group<-1;
 			start_work <- rnd (min_work_start, max_work_start);
 			end_work <- rnd(min_work_end, max_work_end);
 			living_place <- one_of(residential_buildings);
@@ -77,6 +84,48 @@ global {
 			objective <- "resting";
 			location <- any_location_in (living_place);
 		}
+		
+		create people number:30221*reducefactor{
+			age_group<-2;
+			start_work <- rnd (min_work_start, max_work_start);
+			end_work <- rnd(min_work_end, max_work_end);
+			living_place <- one_of(residential_buildings);
+			working_place <- one_of(industrial_buildings);
+			objective <- "resting";
+			location <- any_location_in (living_place);
+		}
+		
+		create people number:10059*reducefactor{
+			age_group<-3;
+			start_work <- rnd (min_work_start, max_work_start);
+			end_work <- rnd(min_work_end, max_work_end);
+			living_place <- one_of(residential_buildings);
+			working_place <- one_of(industrial_buildings);
+			objective <- "resting";
+			location <- any_location_in (living_place);
+		}
+		
+		create people number:1276*reducefactor{
+			age_group<-4;
+			start_work <- rnd (min_work_start, max_work_start);
+			end_work <- rnd(min_work_end, max_work_end);
+			living_place <- one_of(residential_buildings);
+			working_place <- one_of(industrial_buildings);
+			objective <- "resting";
+			location <- any_location_in (living_place);
+		}
+		
+		
+		create people number:73*reducefactor{
+			age_group<-5;
+			start_work <- rnd (min_work_start, max_work_start);
+			end_work <- rnd(min_work_end, max_work_end);
+			living_place <- one_of(residential_buildings);
+			working_place <- one_of(industrial_buildings);
+			objective <- "resting";
+			location <- any_location_in (living_place);
+		}
+			
 	}
 	
 	reflex pollution_evolution {
@@ -113,6 +162,7 @@ species people skills:[moving] {
 	int end_work  ;
 	string objective ; 
 	point the_target <- nil ;
+	int age_group;
 		
 	reflex time_to_work when: current_date.hour = start_work and objective = "resting"{
 		objective <- "working" ;
@@ -132,7 +182,7 @@ species people skills:[moving] {
 	}
 	
 	aspect base {
-		draw circle(5) color: color border: #black;
+		draw circle(5) color: grouptocolor[age_group] border: #black;
 	}
 }
 
