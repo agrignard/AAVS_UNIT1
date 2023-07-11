@@ -11,6 +11,7 @@ global {
 	file shape_file_buildings <- file("../includes/GIS/cbd_buildings.shp");
 	file shape_file_traffic <- file("../includes/GIS/cbd_networks.shp");
 	file shape_file_bounds <- file("../includes/GIS/cbd_bounds.shp");
+	file text_file_population <- file("../includes/data/Demographic_CBD.csv");
 	geometry shape <- envelope(shape_file_bounds);
 	float step <- 1 #mn;
 	field cell <- field(300,300);
@@ -64,6 +65,8 @@ global {
 
 		create car number: nb_car {
 			speed <- rnd(min_car_speed, max_car_speed);
+			location <- any_location_in(one_of(building));
+			state <- flip(0.75) ? "ok" : "notok";
 
 		}
 		create car_network from: shape_file_traffic with: [type::string(read ("highway"))];
@@ -75,57 +78,16 @@ global {
 		list<building> residential_buildings <- building where (each.type="residential" or each.type="mixed");
 		list<building> industrial_buildings <- building  where (each.type="work" or each.type="university" or each.type="mixed") ;
 		
-		create people number:1464*reducefactor{
-			age_group<-1;
-			start_work <- rnd (min_work_start, max_work_start);
-			end_work <- rnd(min_work_end, max_work_end);
-			living_place <- one_of(residential_buildings);
-			working_place <- one_of(industrial_buildings);
-			objective <- "resting";
-			location <- any_location_in (living_place);
-		}
-		
-		create people number:30221*reducefactor{
-			age_group<-2;
-			start_work <- rnd (min_work_start, max_work_start);
-			end_work <- rnd(min_work_end, max_work_end);
-			living_place <- one_of(residential_buildings);
-			working_place <- one_of(industrial_buildings);
-			objective <- "resting";
-			location <- any_location_in (living_place);
-		}
-		
-		create people number:10059*reducefactor{
-			age_group<-3;
-			start_work <- rnd (min_work_start, max_work_start);
-			end_work <- rnd(min_work_end, max_work_end);
-			living_place <- one_of(residential_buildings);
-			working_place <- one_of(industrial_buildings);
-			objective <- "resting";
-			location <- any_location_in (living_place);
-		}
-		
-		create people number:1276*reducefactor{
-			age_group<-4;
-			start_work <- rnd (min_work_start, max_work_start);
-			end_work <- rnd(min_work_end, max_work_end);
-			living_place <- one_of(residential_buildings);
-			working_place <- one_of(industrial_buildings);
-			objective <- "resting";
-			location <- any_location_in (living_place);
-		}
-		
-		
-		create people number:73*reducefactor{
-			age_group<-5;
-			start_work <- rnd (min_work_start, max_work_start);
-			end_work <- rnd(min_work_end, max_work_end);
-			living_place <- one_of(residential_buildings);
-			working_place <- one_of(industrial_buildings);
-			objective <- "resting";
-			location <- any_location_in (living_place);
-		}
-			
+
+		//convert the file into a matrix
+		matrix data <- matrix(text_file_population);
+		//loop on the matrix rows (skip the first header line)
+		loop i from: 1 to: data.rows -1{
+			//loop on the matrix columns
+			loop j from: 0 to: data.columns -1{
+				write "data rows:"+ i +" colums:" + j + " = " + data[j,i];
+			}	
+		}		
 	}
 	
 	reflex pollution_evolution {
@@ -217,10 +179,26 @@ species car_network {
 }
 species car skills:[moving] {
 	int scale<-3;
+	point target;
+	float leaving_proba <- 0.05;
+	string state;
 	
-	reflex move {
-		do wander on: car_network_graph;
+	reflex leave when: (target = nil) and (flip(leaving_proba)) {
+		target <- any_location_in(one_of(building));
 	}
+	//Reflex to move to the target building moving on the road network
+	reflex move when: target != nil {
+	//we use the return_path facet to return the path followed
+		path path_followed <- goto(target: target, on: car_network, recompute_path: false, return_path: true);
+
+		//if the path followed is not nil (i.e. the agent moved this step), we use it to increase the pollution level of overlapping cell
+		if (path_followed != nil and path_followed.shape != nil) {
+			cell[path_followed.shape.location] <- cell[path_followed.shape.location] + 10;					
+		}
+
+		if (location = target) {
+			target <- nil;
+		} }
 
 	aspect base {
 		draw box(5*scale, 1*scale,2*scale) rotate: heading color: #blue border: #black ;
@@ -229,6 +207,8 @@ species car skills:[moving] {
 
 experiment cbd_digital_twins type: gui {	
 	float minimum_cycle_duration<-0.05;
+	list<rgb> pal <- palette([ #black, #green, #yellow, #orange, #orange, #red, #red, #red]);
+	map<rgb,string> pollutions <- [#green::"Good",#yellow::"Average",#orange::"Bad",#red::"Hazardous"];
 	map<rgb,string> legends <- [rgb(231, 111, 81)::"residential",rgb(42, 157, 143)::"office",rgb(244, 162, 97)::"mixed",rgb(233, 196, 106)::"retail",rgb(38, 70, 83)::"university", rgb(33, 158, 188)::"entertainment"];
 	font text <- font("Arial", 14, #bold);
 	font title <- font("Arial", 18, #bold);
@@ -259,6 +239,7 @@ experiment cbd_digital_twins type: gui {
                 }
 			}
         	
+        	mesh cell scale: 9 triangulation: true transparency: 0.4 smooth: 3 above: 0.8 color: pal;
 		}
 		
 	}
