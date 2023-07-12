@@ -15,6 +15,7 @@ global {
 	file point_file_outside_cbd <- file("../includes/GIS/cbd_coming_from_outside.shp");
 	file text_file_population <- file("../includes/data/Demographic_CBD.csv");
 	file text_file_car <- file("../includes/data/car_cbd.csv");
+	file shape_file_trees <- file("../includes/GIS/cbd_tree_canopy2021.shp");
 	
 	geometry shape <- envelope(shape_file_bounds);
 	float step <- 10 #sec;
@@ -63,7 +64,7 @@ global {
 	rgb car_color<-rgb(231, 44, 17);
 	rgb bike_color<-rgb(22,121,171);
 	rgb tram_color<-rgb(15,135,82);
-	
+	rgb tree_color<-rgb(173,255,47);
 	float network_line_width<-4#px;
 	
 	
@@ -84,6 +85,8 @@ global {
 		list<building> carpark_cbd <- building  where (each.type="residential" or each.type="mixed" or each.type="carpark");
 		
 		create outside_gates from: point_file_outside_cbd;
+		
+		create tree_canopy from: shape_file_trees;
 		
 		create pedestrian_network from: shape_file_traffic with: [type::string(read ("highway"))];
 		big_graph <- as_edge_graph (pedestrian_network);
@@ -164,6 +167,15 @@ species building {
 	
 	aspect base {
 		draw shape color:building_color;
+	}
+}
+
+species tree_canopy {
+	string type; 
+	rgb color;
+	
+	aspect base {
+		draw shape color:tree_color;
 	}
 }
 species outside_gates;
@@ -304,6 +316,7 @@ experiment cbd_toolkit_virtual type: gui autorun:true virtual:true{
 			species tram aspect: base visible:show_tram;
 			species sensor aspect:base visible:show_sensor;
 			species car aspect: base visible:show_car;
+			species tree_canopy aspect: base;
 			mesh cell scale: 9 triangulation: true transparency: 0.4 smooth: 3 above: 0.8 color: pal visible:show_heatmap;
 			
 			
