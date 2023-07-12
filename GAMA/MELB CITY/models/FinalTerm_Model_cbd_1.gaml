@@ -38,7 +38,7 @@ global {
 	float reducefactor<-0.1;
 	
 	map<int,string> grouptostring<-[1::"0-14", 2::"15-34",3::"35-64", 4::"65-84",5::"Above 85"];
-	map<int,rgb> age_color<-[1::#red, 2::#green,3::#blue, 4::#pink,5::#yellow,5::#black,6::#gray];
+	map<int,rgb> age_color<-[1::rgb(33, 158, 188), 2::rgb(33, 158, 188),3::rgb(33, 158, 188), 4::rgb(33, 158, 188),5::rgb(33, 158, 188),5::rgb(33, 158, 188),6::rgb(33, 158, 188)];
 	map<int,float> grouptospeed<-[1::3.3 #km / #h, 2::4.5 #km / #h,3::4.5 #km / #h, 4::3.3 #km / #h,5::3.3 #km / #h];
    
 	
@@ -102,7 +102,7 @@ global {
 		tramway_graph <- as_edge_graph (tram_network);
 		
 		create tram number: nb_tram {
-			
+		// add loop break function to distribute tram
 
 		}
 
@@ -219,7 +219,7 @@ species tram skills:[advanced_driving] {
 	}
 
 	aspect base {
-		draw box(20*scale, 3*scale,2*scale) rotate: heading color: #green border: #black ;
+		draw box(20*scale, 3*scale,2*scale) rotate: heading color: rgb(15,135,82) border: #black ;
 		draw box(10*scale, 3*scale,2.5*scale) rotate: heading color: #white border: #black ;
 	}
 }
@@ -235,7 +235,7 @@ species car_network {
 species car skills:[advanced_driving] {
 	int scale<-3;
 	init {
-		vehicle_length <- 1.9 #m;
+		vehicle_length <- 15#m ;
 		max_speed <- 40 #km / #h;
 		max_acceleration <- 3.5;
 	}
@@ -340,6 +340,32 @@ experiment cbd_digital_twins type: gui autorun:true{
         	
 		}
 		
+		
+		
+		display "data_pie_chart" type: 2d
+		{
+			chart "Mode of Transport" type: pie style: ring background: # black color: # white label_text_color: #black  axes: #red  title_font: font( 'Serif', 32.0, #italic)
+			tick_font: font('Monospaced' , 14, #bold) label_font: font('Arial', 32 #bold) x_label: 'Nice Xlabel' y_label:
+			'Nice Ylabel' size:{0.5,0.5} position:{0,0.5}
+			{
+				data "Car" value: 1 color: # black;
+				data "Tram" value: 2 color: # blue;
+				data "Bike" value: 3 color: # blue;
+				data "Walk" value: 4 color: # blue;
+				
+			}
+			
+			
+			chart "Nice Ring Pie Chart2" type: pie style: ring background: # darkgreen color: # lightgreen label_text_color: #red label_background_color: #lightgray axes: #red  title_font: font( 'Serif', 32.0, #italic)
+			tick_font: font('Monospaced' , 14, #bold) label_font: font('Arial', 32 #bold) x_label: 'Nice Xlabel' y_label:
+			'Nice Ylabel' size:{0.5,0.5} position:{0.5,0}
+			{
+				data "BCC" value: 100 + cos(100 * cycle) * cycle * cycle color: # black;
+				data "ABC" value: cycle * cycle color: # blue;
+				data "BCD" value: cycle + 1;
+			}
+
+		}
 	}
 }
 
@@ -353,7 +379,7 @@ experiment cbd_digital_twins_demo type: gui autorun:true{
 	font title <- font("Arial", 18, #bold);
 	
 	output {
-		display table_display type: 3d axes: false background: rgb(151, 157, 172) fullscreen:0{
+		display table_display type: 3d axes: false background: rgb(251, 227, 190) fullscreen:0{
 			rotation angle:-21+180;
 			camera 'default' location: {1111.786,1109.9386,2688.8238} target: {1111.786,1109.8916,0.0};
 			species building aspect: base visible:show_building;
@@ -417,7 +443,8 @@ experiment cbd_digital_twins_demo type: gui autorun:true{
         	
 		}
 		
-		display screen_display type: 3d axes: false background: rgb(151, 157, 172) fullscreen:1{
+		//second display
+		display screen_display type: 3d axes: false background: rgb(251, 227, 190) fullscreen:1{
 			species building aspect: base;
 			overlay position: { 50#px,50#px} size: { 1 #px, 1 #px } background: # black border: #black rounded: false
 			{
