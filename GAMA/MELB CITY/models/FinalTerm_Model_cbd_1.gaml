@@ -49,6 +49,8 @@ global {
 	
 	map<string,rgb> landuse_color<-["residential"::rgb(231, 111, 81),"university"::rgb(38, 70, 83), "mixed"::rgb(244, 162, 97), "office"::rgb(42, 157, 143), "retail"::rgb(233, 196, 106)
 		, "entertainment"::rgb(33, 158, 188),"carpark"::rgb(92, 103, 125),"park"::rgb(153, 217, 140)];
+	map<string,rgb> path_type_color<-["car"::rgb(car_color),"bike"::rgb(bike_color),"tram"::rgb(tram_color),"people"::rgb(people_color)];
+
    
 	
 	//UX/UI
@@ -108,7 +110,7 @@ global {
 		
 		//create traffic system
 		create outside_gates from: point_file_outside_cbd;
-		create traffic_network from: shape_file_cbd_traffic with: [type::string(read ("type"))] ;
+		create traffic_network from: shape_file_cbd_traffic with: [type::string(read ("type"))];
 		list<traffic_network> tramway <- traffic_network where (each.type="tram");
 		tram_network_graph <- as_edge_graph (tramway);
 		list<traffic_network> pedestrianway <- traffic_network where (each.type="pedestrain");
@@ -117,6 +119,7 @@ global {
 		bike_network_graph <- as_edge_graph (bikeway);
 		list<traffic_network> carway <- traffic_network where (each.type="car");
 		car_network_graph <- as_edge_graph (carway);
+		
 		
 		
 		//create tree_canopy from: shape_file_trees;
@@ -235,8 +238,10 @@ species tree{
 
 species traffic_network{
 	string type;
+	int path_group;
+	
 	aspect base {
-		draw shape color:people_color width:network_line_width;
+		draw shape color:path_type_color[type] width:network_line_width;
 	}
 }
 species outside_gates;
