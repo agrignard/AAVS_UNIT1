@@ -102,7 +102,7 @@ global {
 		tramway_graph <- as_edge_graph (tram_network);
 		
 		create tram number: nb_tram {
-			speed <- rnd(min_tram_speed, max_tram_speed);
+			
 
 		}
 
@@ -206,8 +206,13 @@ species tram_network {
 		draw shape color: color;
 	}
 }
-species tram skills:[moving] {
+species tram skills:[advanced_driving] {
 	int scale<-3;
+	init {
+		vehicle_length <- 33 #m;
+		max_speed <- 40 #km / #h;
+		max_acceleration <- 3.5;
+	}
 	
 	reflex move when: current_date.hour between(5,24){
 		do wander on: tramway_graph;
