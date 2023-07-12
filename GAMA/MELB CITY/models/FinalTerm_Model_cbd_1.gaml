@@ -10,7 +10,7 @@ model FinalTermModelcbd1
 global {
 	file shape_file_buildings <- file("../includes/GIS/cbd_buildings.shp");
 	file shape_file_traffic <- file("../includes/GIS/cbd_networks.shp");
-	//file shape_file_traffic <- file("../includes/GIS/ryan/cbd_pedestrian_network_custom.shp");
+	file shape_file_cbd_traffic <- file("../includes/GIS/ryan/cbd_pedestrian_network_custom.shp");
 	file shape_file_bounds <- file("../includes/GIS/cbd_bounds.shp");
 	file shape_file_sensors <- file("../includes/GIS/cbd_sensors.shp");
 	file point_file_outside_cbd <- file("../includes/GIS/cbd_coming_from_outside.shp");
@@ -34,10 +34,12 @@ global {
 	int max_work_end <- 20;
 	float min_car_speed <- 5 #km / #h;
 	float max_car_speed <- 40 #km / #h;
-	graph big_graph;
-	graph footway_graph;
-	graph tramway_graph;
+
 	graph car_network_graph;
+	graph tram_network_graph;
+	graph bike_network_graph;
+	graph pedestrian_network_graph;
+	
 	float reducefactor<-0.1;
 	
 	map<int,string> grouptostring<-[1::"0-14", 2::"15-34",3::"35-64", 4::"65-84",5::"Above 85"];
@@ -97,13 +99,25 @@ global {
 	
 	
 	init {
+		//create building
 		create building from: shape_file_buildings with: [type::string(read ("type"))] ;
 		
 		list<building> residential_buildings <- building where (each.type="residential" or each.type="mixed");
 		list<building> industrial_buildings <- building  where (each.type="work" or each.type="university" or each.type="mixed") ;
 		list<building> carpark_cbd <- building  where (each.type="residential" or each.type="mixed" or each.type="carpark");
 		
+		//create traffic system
 		create outside_gates from: point_file_outside_cbd;
+		create traffic_network from: shape_file_cbd_traffic with: [type::string(read ("type"))] ;
+		list<traffic_network> tramway <- traffic_network where (each.type="tram");
+		tram_network_graph <- as_edge_graph (tramway);
+		list<traffic_network> pedestrianway <- traffic_network where (each.type="pedestrain");
+		pedestrian_network_graph <- as_edge_graph (pedestrianway);
+		list<traffic_network> bikeway <- traffic_network where (each.type="pedestrain");
+		bike_network_graph <- as_edge_graph (bikeway);
+		list<traffic_network> carway <- traffic_network where (each.type="car");
+		car_network_graph <- as_edge_graph (carway);
+		
 		
 		//create tree_canopy from: shape_file_trees;
 		create tree from: shape_file_trees;
@@ -115,12 +129,6 @@ global {
 			}
 		}
 		
-		create pedestrian_network from: shape_file_traffic with: [type::string(read ("highway"))];
-		big_graph <- as_edge_graph (pedestrian_network);
-		ask pedestrian_network where (each.type!="footway"){
-			do die;
-		}
-		footway_graph <- as_edge_graph (pedestrian_network);
 		
 		//create people from the demographic file
 		matrix data_people <- matrix(text_file_population);
@@ -143,14 +151,7 @@ global {
 			}
 		}	
 		
-		create sensor from:shape_file_sensors with:[name:string(read ("name"))];
-		
-		create tram_network from: shape_file_traffic with: [type::string(read ("highway"))];
-		ask tram_network where (each.type!="tramway"){
-			do die;
-		}
-		tramway_graph <- as_edge_graph (tram_network);
-		
+
 		create tram number: nb_tram {
 		// add loop break function to distribute tram
 
@@ -170,15 +171,8 @@ global {
 			}
 		}
 		
-		create car_network from: shape_file_traffic with: [type::string(read ("highway"))];
-		ask car_network where (each.type!="driveway"){
-			do die;
-		}
-		car_network_graph <- as_edge_graph (car_network);
-		
 		
 		create bike number:nb_bike;
-		
 
 		
 	}
@@ -239,6 +233,12 @@ species tree{
 	}
 }
 
+species traffic_network{
+	string type;
+	aspect base {
+		draw shape color:people_color width:network_line_width;
+	}
+}
 species outside_gates;
 
 species sensor{
@@ -248,14 +248,6 @@ species sensor{
 	}
 }
 
-species pedestrian_network{
-	string type; 
-	rgb color;
-	
-	aspect base {
-		draw shape color:people_color width:network_line_width;
-	}
-}
 species people skills:[moving] {
 	rgb color <- #yellow ;
 	building living_place <- nil ;
@@ -278,7 +270,7 @@ species people skills:[moving] {
 	} 
 	 
 	reflex move when: the_target != nil {
-		do goto target: the_target  on: big_graph ; 
+		do goto target: the_target  on: pedestrian_network_graph ; 
 		if the_target = location {
 			the_target <- nil ;
 		}
@@ -293,14 +285,6 @@ species people skills:[moving] {
 	}
 }
 
-species tram_network {
-	string type; 
-	rgb color <- #blue  ;
-	
-	aspect base {
-		draw shape color: tram_color width:network_line_width;
-	}
-}
 species tram skills:[advanced_driving] {
 	int scale<-3;
 	init {
@@ -310,7 +294,7 @@ species tram skills:[advanced_driving] {
 	}
 	
 	reflex move when: current_date.hour between(5,24){
-		do wander on: tramway_graph;
+		do wander on: tram_network_graph;
 	}
 
 	aspect base {
@@ -319,14 +303,6 @@ species tram skills:[advanced_driving] {
 	}
 }
 
-species car_network {
-	string type; 
-	rgb color;
-	
-	aspect base {
-		draw shape color:car_color width:network_line_width;
-	}
-}
 species car skills:[advanced_driving] {
 	int scale<-3;
 	init {
@@ -365,7 +341,7 @@ species bike skills:[advanced_driving] {
 
 	//Reflex to move to the target building moving on the road network
 	reflex move {
-	do wander on:car_network_graph;
+	do wander on:bike_network_graph;
 	}
 
 	aspect base {
@@ -384,9 +360,7 @@ experiment cbd_toolkit_virtual type: gui autorun:true virtual:true{
 			
 			species building aspect: base visible:show_building;
 			species building aspect: landuse visible:show_landuse;
-			species pedestrian_network aspect: base visible:show_network;
-			species tram_network aspect: base visible:show_network;
-			species car_network aspect: base visible:show_network;
+			species traffic_network aspect: base visible:show_network;
 			species people aspect: base visible:show_people;
 			species tram aspect: base visible:show_tram;
 			species sensor aspect:base visible:show_sensor;
