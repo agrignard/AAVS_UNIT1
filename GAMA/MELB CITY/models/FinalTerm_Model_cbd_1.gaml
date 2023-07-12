@@ -240,6 +240,24 @@ species traffic_network{
 	string type;
 	int path_group;
 	
+	//command display after right click
+	user_command "change road type to car" action: change_type1;
+	action change_type1{
+	type <- "car";
+	}
+	user_command "change road type to pedestrian" action: change_type2;
+	action change_type2{
+	type <- "pedestain";
+	}
+	user_command "change road type to bike" action: change_type3;
+	action change_type3{
+	type <- "pedestain";
+	}
+	user_command "change road type to tram" action: change_type4;
+	action change_type4{
+	type <- "tram";
+	}
+	
 	aspect base {
 		draw shape color:path_type_color[type] width:network_line_width;
 	}
