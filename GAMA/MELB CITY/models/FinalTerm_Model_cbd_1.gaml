@@ -11,98 +11,147 @@ global {
 	file shape_file_buildings <- file("../includes/GIS/cbd_buildings.shp");
 	file shape_file_traffic <- file("../includes/GIS/cbd_networks.shp");
 	file shape_file_bounds <- file("../includes/GIS/cbd_bounds.shp");
+	file shape_file_sensors <- file("../includes/GIS/cbd_sensors.shp");
+	file point_file_outside_cbd <- file("../includes/GIS/cbd_coming_from_outside.shp");
+	file text_file_population <- file("../includes/data/Demographic_CBD.csv");
+	file text_file_car <- file("../includes/data/car_cbd.csv");
+	
 	geometry shape <- envelope(shape_file_bounds);
-	float step <- 1 #mn;
+	float step <- 10 #sec;
 	field cell <- field(300,300);
-	date starting_date <- date("2023-07-09-00-00-00");
-	int nb_tram <- 50;
+	//date starting_date <- date("2023-07-09-00-00-00");
+	date starting_date <- date([2023,7,9,6,0,0]);
+	
+	int nb_tram <- 0;
 	float min_tram_speed <- 10.0 #km / #h;
 	float max_tram_speed <- 26.0 #km / #h;
-	int nb_people <- 1000;
 	int min_work_start <- 6;
 	int max_work_start <- 8;
 	int min_work_end <- 16; 
 	int max_work_end <- 20;
-	float min_people_speed <- 4.8 #km / #h;
-	float max_people_speed <- 8.8 #km / #h;
-	int nb_car <- 100;
 	float min_car_speed <- 5 #km / #h;
 	float max_car_speed <- 40 #km / #h;
+	graph big_graph;
 	graph footway_graph;
 	graph tramway_graph;
 	graph car_network_graph;
+	float reducefactor<-0.1;
+	
+	map<int,string> grouptostring<-[1::"0-14", 2::"15-34",3::"35-64", 4::"65-84",5::"Above 85"];
+	map<int,rgb> age_color<-[1::rgb(33, 158, 188), 2::rgb(33, 158, 188),3::rgb(33, 158, 188), 4::rgb(33, 158, 188),5::rgb(33, 158, 188),5::rgb(33, 158, 188),6::rgb(33, 158, 188)];
+	map<int,float> grouptospeed<-[1::3.3 #km / #h, 2::4.5 #km / #h,3::4.5 #km / #h, 4::3.3 #km / #h,5::3.3 #km / #h];
+   
+	
+	map<string,rgb> landuse_color<-["residential"::rgb(231, 111, 81),"university"::rgb(38, 70, 83), "mixed"::rgb(244, 162, 97), "office"::rgb(42, 157, 143), "retail"::rgb(233, 196, 106)
+		, "entertainment"::rgb(33, 158, 188),"carpark"::rgb(92, 103, 125),"park"::rgb(153, 217, 140)];
+   
+	
+	//UX/UI
+	bool show_building<-true;
+	bool show_tram<-true;
+	bool show_car<-true;
+	bool show_people<-true;
+	bool show_network<-true;
+	bool show_sensor<-true;
+	bool show_heatmap<-false;
+	
+	
+	//VISUAL
+	rgb background_color<-rgb(251,227,190);
+	rgb building_color<-rgb(236,102,44);
+	rgb people_color<-rgb(13,13,7);
+	rgb car_color<-rgb(231, 44, 17);
+	rgb bike_color<-rgb(22,121,171);
+	rgb tram_color<-rgb(15,135,82);
+	
+	float network_line_width<-4#px;
+	
+	
+	
+	//POLUTION COLOR
+	list<rgb> pal <- palette([ #black, #green, #yellow, #orange, #orange, #red, #red, #red]);
+	map<rgb,string> pollutions <- [#green::"Good",#yellow::"Average",#orange::"Bad",#red::"Hazardous"];
+	map<rgb,string> legends <- [rgb(231, 111, 81)::"residential",rgb(42, 157, 143)::"office",rgb(244, 162, 97)::"mixed",rgb(233, 196, 106)::"retail",rgb(38, 70, 83)::"university", rgb(33, 158, 188)::"entertainment"];
+	font text <- font("Arial", 14, #bold);
+	font title <- font("Arial", 18, #bold);
+	
 	
 	init {
-		create building from: shape_file_buildings with: [type::string(read ("type"))] {
-			if type="residential" {
-				color <- rgb(231, 111, 81);
+		create building from: shape_file_buildings with: [type::string(read ("type"))] ;
+		
+		list<building> residential_buildings <- building where (each.type="residential" or each.type="mixed");
+		list<building> industrial_buildings <- building  where (each.type="work" or each.type="university" or each.type="mixed") ;
+		list<building> carpark_cbd <- building  where (each.type="residential" or each.type="mixed" or each.type="carpark");
+		
+		create outside_gates from: point_file_outside_cbd;
+		
+		create pedestrian_network from: shape_file_traffic with: [type::string(read ("highway"))];
+		big_graph <- as_edge_graph (pedestrian_network);
+		ask pedestrian_network where (each.type!="footway"){
+			do die;
+		}
+		footway_graph <- as_edge_graph (pedestrian_network);
+		
+		//create people from the demographic file
+		matrix data_people <- matrix(text_file_population);
+		loop i from: 0 to: data_people.rows -1{
+			
+			create people number:int(data_people[1,i])/10{
+			age_group <- int(i+1);
+			speed <- float(data_people[2,i]);
+			if(age_group=6){
+				location <- any_location_in (one_of(outside_gates));
+			} else {
+				location <- any_location_in (one_of(residential_buildings));
 			}
-			if type="university"{
-				color <- rgb(38, 70, 83);
-			}
-			if type="mixed"{
-				color <- rgb(244, 162, 97);
-			}
-			if type="office"{
-				color <- rgb(42, 157, 143);
-			}
-			if type="retail"{
-				color <- rgb(233, 196, 106);
-			}
-			if type="entertainment"{
-				color <- rgb(33, 158, 188);
-			}
-			if type="carpark"{
-				color <- rgb(92, 103, 125);
-			}
-			if type="park"{
-				color <- rgb(153, 217, 140);
+			taffic_mode<<+ [int(data_people[3,i]),int(data_people[4,i]),int(data_people[5,i]),int(data_people[6,i]),int(data_people[7,i])];
+			start_work <- int(data_people[8,i]);
+			end_work <- int(data_people[9,i]);
+			living_place <- one_of(residential_buildings);
+			working_place <- one_of(industrial_buildings);
+			objective <- "resting";
 			}
 		}	
 		
-		create footway from: shape_file_traffic with: [type::string(read ("highway"))];
-		ask footway where (each.type!="footway"){
-			do die;
-		}
-		footway_graph <- as_edge_graph (footway);
+		create sensor from:shape_file_sensors with:[name:string(read ("name"))];
 		
-		create tramway from: shape_file_traffic with: [type::string(read ("highway"))];
-		ask tramway where (each.type!="tramway"){
+		create tram_network from: shape_file_traffic with: [type::string(read ("highway"))];
+		ask tram_network where (each.type!="tramway"){
 			do die;
 		}
-		tramway_graph <- as_edge_graph (tramway);
+		tramway_graph <- as_edge_graph (tram_network);
 		
 		create tram number: nb_tram {
-			speed <- rnd(min_tram_speed, max_tram_speed);
+		// add loop break function to distribute tram
 
 		}
 
-		create car number: nb_car {
-			speed <- rnd(min_car_speed, max_car_speed);
-
+		//create car from the car file
+		matrix data_car <- matrix(text_file_car);
+		loop i from: 0 to: data_car.rows -1{
+			create car number: int(data_car[1,i])/100 {
+			car_group <- int(i+1);
+			if(car_group=1){
+				location <- any_location_in (one_of(carpark_cbd));
+			} else {
+				location <- any_location_in (one_of(outside_gates));
+			}
+			}
 		}
+		
 		create car_network from: shape_file_traffic with: [type::string(read ("highway"))];
 		ask car_network where (each.type!="driveway"){
 			do die;
 		}
 		car_network_graph <- as_edge_graph (car_network);
+		
 
-		list<building> residential_buildings <- building where (each.type="residential" or each.type="mixed");
-		list<building> industrial_buildings <- building  where (each.type="work" or each.type="university" or each.type="mixed") ;
-		create people number: nb_people {
-			speed <- rnd(min_people_speed, max_people_speed);
-			start_work <- rnd (min_work_start, max_work_start);
-			end_work <- rnd(min_work_end, max_work_end);
-			living_place <- one_of(residential_buildings);
-			working_place <- one_of(industrial_buildings);
-			objective <- "resting";
-			location <- any_location_in (living_place);
-		}
+		
 	}
 	
 	reflex pollution_evolution {
 		//ask all cells to decrease their level of pollution
-		cell <- cell * 0.8;
+		cell <- cell * 0.95;
 	
 		//diffuse the pollutions to neighbor cells
 		diffuse var: pollution on: cell proportion: 0.9;
@@ -111,19 +160,27 @@ global {
 
 species building {
 	string type; 
-	rgb color <- rgb(229, 229, 229) ;
+	rgb color;
 	
 	aspect base {
-		draw shape color: color;
+		draw shape color:building_color;
+	}
+}
+species outside_gates;
+
+species sensor{
+	string name;
+	aspect base {
+		draw square(20) color:#black;
 	}
 }
 
-species footway{
+species pedestrian_network{
 	string type; 
-	rgb color <- rgb(229, 229, 229)  ;
+	rgb color;
 	
 	aspect base {
-		draw shape color: color;
+		draw shape color:people_color width:network_line_width;
 	}
 }
 species people skills:[moving] {
@@ -134,6 +191,8 @@ species people skills:[moving] {
 	int end_work  ;
 	string objective ; 
 	point the_target <- nil ;
+	int age_group;
+	list<int> taffic_mode;
 		
 	reflex time_to_work when: current_date.hour = start_work and objective = "resting"{
 		objective <- "working" ;
@@ -146,94 +205,198 @@ species people skills:[moving] {
 	} 
 	 
 	reflex move when: the_target != nil {
-		do goto target: the_target on: footway_graph ; 
+		do goto target: the_target  on: big_graph ; 
 		if the_target = location {
 			the_target <- nil ;
 		}
 	}
 	
-	aspect base {
-		draw circle(5) color: color border: #black;
+	aspect base{
+		draw circle(5) color: people_color border: #black;
+	}
+	
+	aspect age {
+		draw circle(5) color: age_color[age_group] border: #black;
 	}
 }
 
-species tramway {
+species tram_network {
 	string type; 
 	rgb color <- #blue  ;
 	
 	aspect base {
-		draw shape color: color;
+		draw shape color: tram_color width:network_line_width;
 	}
 }
-species tram skills:[moving] {
+species tram skills:[advanced_driving] {
 	int scale<-3;
+	init {
+		vehicle_length <- 33 #m;
+		max_speed <- 40 #km / #h;
+		max_acceleration <- 3.5;
+	}
 	
 	reflex move when: current_date.hour between(5,24){
 		do wander on: tramway_graph;
 	}
 
 	aspect base {
-		draw box(20*scale, 3*scale,2*scale) rotate: heading color: #green border: #black ;
+		draw box(20*scale, 3*scale,2*scale) rotate: heading color: rgb(15,135,82) border: #black ;
 		draw box(10*scale, 3*scale,2.5*scale) rotate: heading color: #white border: #black ;
 	}
 }
 
 species car_network {
 	string type; 
-	rgb color <- #black  ;
+	rgb color;
 	
 	aspect base {
-		draw shape color: color;
+		draw shape color:car_color width:network_line_width;
 	}
 }
-species car skills:[moving] {
+species car skills:[advanced_driving] {
 	int scale<-3;
-	
-	reflex move {
-		do wander on: car_network_graph;
+	init {
+		vehicle_length <- 15#m ;
+		max_speed <- 40 #km / #h;
+		max_acceleration <- 3.5;
 	}
+	int car_group;
+	point target;
+	float leaving_proba <- 0.05;
+	string state;
+	
+	reflex leave when: (target = nil) and (flip(leaving_proba)) {
+		target <- any_location_in(one_of(building));
+	}
+	//Reflex to move to the target building moving on the road network
+	reflex move when: target != nil {
+	//we use the return_path facet to return the path followed
+		path path_followed <- goto(target: target, on: car_network_graph, recompute_path: false, return_path: true);
+
+		//if the path followed is not nil (i.e. the agent moved this step), we use it to increase the pollution level of overlapping cell
+		if (path_followed != nil and path_followed.shape != nil) {
+			cell[path_followed.shape.location] <- cell[path_followed.shape.location] + 10;					
+		}
+
+		if (location = target) {
+			target <- nil;
+		} }
 
 	aspect base {
-		draw box(5*scale, 1*scale,2*scale) rotate: heading color: #blue border: #black ;
+		draw box(5*scale, 1*scale,2*scale) rotate: heading color:car_color border: #black ;
 	}
 }
 
-experiment cbd_digital_twins type: gui {	
+experiment cbd_toolkit_virtual type: gui autorun:true virtual:true{	
 	float minimum_cycle_duration<-0.05;
-	map<rgb,string> legends <- [rgb(231, 111, 81)::"residential",rgb(42, 157, 143)::"office",rgb(244, 162, 97)::"mixed",rgb(233, 196, 106)::"retail",rgb(38, 70, 83)::"university", rgb(33, 158, 188)::"entertainment"];
-	font text <- font("Arial", 14, #bold);
-	font title <- font("Arial", 18, #bold);
-	
 	output {
 		
-		display city_display type: 3d axes: false background: rgb(151, 157, 172) {
-			species building aspect: base ;
-			species footway aspect: base;
-			species people aspect: base;
-			species tramway aspect: base;
-			species tram aspect: base;
-			species car_network aspect: base;
-			species car aspect: base;
+		display Screen1 type: 3d axes: false background:background_color virtual:true{
+			rotation angle:-21;
+			
+			
+			species building aspect: base visible:show_building;
+			species pedestrian_network aspect: base visible:show_network;
+			species tram_network aspect: base visible:show_network;
+			species car_network aspect: base visible:show_network;
+			species people aspect: base visible:show_people;
+			species tram aspect: base visible:show_tram;
+			species sensor aspect:base visible:show_sensor;
+			species car aspect: base visible:show_car;
+			mesh cell scale: 9 triangulation: true transparency: 0.4 smooth: 3 above: 0.8 color: pal visible:show_heatmap;
+			
+			
+			event "b"  {show_building<-!show_building;}
+			event "t"  {show_tram<-!show_tram;}
+			event "c"  {show_car<-!show_car;}
+			event "n"  {show_network<-!show_network;}
+			event "p"  {show_people<-!show_people;}
+			event "s"  {show_sensor<-!show_sensor;}
+			event "h"  {show_heatmap<-!show_heatmap;}
 			
 			overlay position: { 50#px,50#px} size: { 1 #px, 1 #px } background: # black border: #black rounded: false
 			{
-				float y <- 50#px;
+				draw "CBD ToolKIT v1.0" at: {0,0} color: #white font: font("Helvetica", 50, #bold);
 				
-				draw "legend" at: {0, y} anchor: #top_left  color: #white font: title;
-				y <- y + 50#px;
-                draw rectangle(40#px, 240#px) at: {20#px, y + 100#px} wireframe: true color: #white;
-                loop p over: legends.pairs
-                {
-                    draw square(40#px) at: { 20#px, y } color: rgb(p.key, 0.8) ;
-                    draw p.value at: { 60#px, y} anchor: #left_center color: # white font: text;
-                    y <- y + 40#px;
-                }
-			}
-        	
+				draw "Date: " + current_date at: {0,50#px} color: #white font: font("Helvetica", 20, #bold);
+				
+                
+                float x<-0#px;
+                float gapBetweenWord<-100#px;
+                
+                draw "UI/UX (Press the following button)" at: { x,world.shape.height+75#px} color: #white font: font("Helvetica", 20, #bold);
+              
+                draw "(b)uilding (" + show_building + ")" at: { x,world.shape.height+100#px} color: #white font: font("Helvetica", 10, #bold);
+                x<-x+gapBetweenWord;
+                draw "(t)ram (" + show_tram + ")" at: { x,world.shape.height+100#px} color: #white font: font("Helvetica", 10, #bold);
+                x<-x+gapBetweenWord;
+                draw "(c)ar (" + show_car + ")" at: { x,world.shape.height+100#px} color: #white font: font("Helvetica", 10, #bold);
+                x<-x+gapBetweenWord;
+                draw "(n)etwork (" + show_network + ")" at: { x,world.shape.height+100#px} color: #white font: font("Helvetica", 10, #bold);
+                x<-x+gapBetweenWord;
+                draw "(p)eople (" + show_people + ")" at: { x,world.shape.height+100#px} color: #white font: font("Helvetica", 10, #bold);
+                x<-x+gapBetweenWord;
+                draw "(s)ensor (" + show_people + ")" at: { x,world.shape.height+100#px} color: #white font: font("Helvetica", 10, #bold);
+                x<-x+gapBetweenWord;
+                draw "(h)eatmap (" + show_heatmap + ")" at: { x,world.shape.height+100#px} color: #white font: font("Helvetica", 10, #bold);
+                x<-x+gapBetweenWord;
+			}	
 		}
 		
+		
+		
+		display Screen2 type: 2d virtual:true background:background_color
+		{
+			chart "Mode of Transport" type: pie style: ring background: # black color: # white label_text_color: #black  axes: #red  title_font: font( 'Serif', 32.0, #italic)
+			tick_font: font('Monospaced' , 14, #bold) label_font: font('Arial', 32 #bold) x_label: 'Nice Xlabel' y_label:
+			'Nice Ylabel' size:{0.5,0.5} position:{0,0.5}
+			{
+				data "Car" value: 1 color: # black;
+				data "Tram" value: 2 color: # blue;
+				data "Bike" value: 3 color: # blue;
+				data "Walk" value: 4 color: # blue;
+				
+			}
+			
+			
+			chart "Nice Ring Pie Chart2" type: pie style: ring background: # darkgreen color: # lightgreen label_text_color: #red label_background_color: #lightgray axes: #red  title_font: font( 'Serif', 32.0, #italic)
+			tick_font: font('Monospaced' , 14, #bold) label_font: font('Arial', 32 #bold) x_label: 'Nice Xlabel' y_label:
+			'Nice Ylabel' size:{0.5,0.5} position:{0.5,0}
+			{
+				data "BCC" value: 100 + cos(100 * cycle) * cycle * cycle color: # black;
+				data "ABC" value: cycle * cycle color: # blue;
+				data "BCD" value: cycle + 1;
+			}
+
+		}
 	}
 }
+
+
+experiment cbd_toolkit_desktop type: gui autorun:true parent:cbd_toolkit_virtual{	
+	float minimum_cycle_duration<-0.05;
+	
+	output{
+		display table parent:Screen1{}
+		display screen parent:Screen2{}
+	}
+}
+
+
+experiment cbd_toolkit_demo type: gui autorun:true parent:cbd_toolkit_virtual{	
+	float minimum_cycle_duration<-0.05;
+	
+	output{
+		display table parent:Screen1 fullscreen:1{
+			camera 'default' location: {1111.786,1109.9386,2688.8238} target: {1111.786,1109.8916,0.0};
+		}
+		display screen parent:Screen2 fullscreen:2{}
+	}
+}
+
+
+
 
 /* Insert your model definition here */
 
