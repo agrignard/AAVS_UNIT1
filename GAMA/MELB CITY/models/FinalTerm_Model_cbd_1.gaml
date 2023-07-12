@@ -55,6 +55,7 @@ global {
 	bool show_network<-true;
 	bool show_sensor<-true;
 	bool show_heatmap<-false;
+	bool show_tree<-false;
 	
 	
 	//VISUAL
@@ -322,10 +323,10 @@ experiment cbd_toolkit_virtual type: gui autorun:true virtual:true{
 			species tram aspect: base visible:show_tram;
 			species sensor aspect:base visible:show_sensor;
 			species car aspect: base visible:show_car;
-			species tree_canopy aspect: base;
+			species tree_canopy aspect: base visible:show_tree;
 			mesh cell scale: 9 triangulation: true transparency: 0.4 smooth: 3 above: 0.8 color: pal visible:show_heatmap;
 			
-			
+			event "a"  {show_tree<-!show_tree;}
 			event "b"  {show_building<-!show_building;}
 			event "t"  {show_tram<-!show_tram;}
 			event "c"  {show_car<-!show_car;}
@@ -346,6 +347,8 @@ experiment cbd_toolkit_virtual type: gui autorun:true virtual:true{
                 
                 draw "UI/UX (Press the following button)" at: { x,world.shape.height+75#px} color: text_color font: font("Helvetica", 20, #bold);
               
+                draw "(a)rbre (" + show_tree + ")" at: { x,world.shape.height+100#px} color: text_color font: font("Helvetica", 10, #bold);
+                x<-x+gapBetweenWord;
                 draw "(b)uilding (" + show_building + ")" at: { x,world.shape.height+100#px} color: text_color font: font("Helvetica", 10, #bold);
                 x<-x+gapBetweenWord;
                 draw "(t)ram (" + show_tram + ")" at: { x,world.shape.height+100#px} color: text_color font: font("Helvetica", 10, #bold);
