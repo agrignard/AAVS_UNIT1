@@ -415,7 +415,7 @@ experiment cbd_toolkit_virtual type: gui autorun:true virtual:true{
 			
 			chart "Mode of Transport proportion" type: pie style: ring background: background_color color: rgb(236,102,45) label_text_color: rgb(236,102,45)  axes: #red  title_font: font( 'BrownPro', 32.0, #plain)
 			tick_font: font('BrownPro' , 14, #plain) label_font: font('BrownPro', 32 #plain) x_label: 'Nice Xlabel' y_label:
-			'Nice Ylabel' size:{0.5,0.5} position:{0,0.1}  label_background_color: background_color tick_line_color: rgb(255,255,255)
+			'Nice Ylabel' size:{0.42,0.42} position:{0,0.1}  label_background_color: background_color tick_line_color: rgb(255,255,255)
 			legend_font: font('BrownPro' , 14, #plain) 
 			
 			{
@@ -424,33 +424,48 @@ experiment cbd_toolkit_virtual type: gui autorun:true virtual:true{
 				data "Bike" value: (-1) color: rgb(161,106,69);
 				data "Walk" value: (length(people)) color: rgb(217,145,93);
 				data "Bus" value: (-1) color: rgb(237,179,140);
-				data "Other" value:(-1) color: rgb(244,169,160);
+				data "Other" value:(-1) color: rgb(244,216,189);
 				
 			}
 			
-			chart "Polution Level" type:histogram   size:{0.5,0.5} position:{0.5,0.1} background: background_color 
-			x_serie_labels: ["categ1","categ2"]
+			chart "Pollution Level" type:histogram   size:{0.42,0.42} position:{0.5,0.1} background: background_color color: rgb(236,102,45)
+			tick_font: font('BrownPro' , 14, #plain) label_text_color: rgb(236,102,45) title_font: font( 'BrownPro', 32.0, #plain) 
+			label_font: font('BrownPro', 14 #plain) legend_font: font('BrownPro' , 14, #plain) 
+			x_serie_labels: ["categ1","Mode of Transport"]
 			style:"3d"
 			series_label_position: xaxis
 			{
-				data "Hazardous" value:cell 
-				accumulate_values: true						
-				color: rgb(112,76,51);
-				
-				data "Bad" value:cycle*cycle 
+				data "Walk" value:(100+cycle)
 				accumulate_values: true						
 			    color:rgb(217,145,93);
 			    
-				data "Average" value:cycle+1
+				data "Bike" value:(100+cycle)
 				accumulate_values: true						
-				marker_shape:marker_circle ;
+				color: rgb(161,106,69);
+			    
+				data "Tram" value:(24*55*1+cycle)
+				accumulate_values: true						
+				color: rgb(112,76,51);
 				
-				data "Good" value:cycle+1
+				data "Car" value:(length(car)*3)
 				accumulate_values: true						
-				marker_shape:marker_circle ;
+				color: rgb(71,42,22);
 			}
 			
-		
+			chart "Demography" type: pie style: ring background: background_color color: rgb(236,102,45) label_text_color: rgb(236,102,45)  axes: #red  title_font: font( 'BrownPro', 32.0, #plain)
+			tick_font: font('BrownPro' , 14, #plain) label_font: font('BrownPro', 32 #plain) x_label: 'Nice Xlabel' y_label:
+			'Nice Ylabel' size:{0.42,0.42} position:{0,0.55}  label_background_color: background_color tick_line_color: rgb(255,255,255)
+			legend_font: font('BrownPro' , 14, #plain) 
+			
+			{
+				data "Age 0-14" value: (length(people)*0.034) color: rgb(71,42,22);
+				data "Age 15-34" value: (length(people)*0.7) color: rgb(112,76,51);
+				data "Age 35-64" value: (length(people)*0.23) color: rgb(161,106,69);
+				data "Age 65-84" value: (length(people)*0.029) color: rgb(217,145,93);
+				data "Above 85" value: (length(people)*0.007) color: rgb(237,179,140);
+				data "Living outside cbd" value:(length(people)*0.5+cycle) color: rgb(244,216,189);
+				
+			}
 
 
 		}
