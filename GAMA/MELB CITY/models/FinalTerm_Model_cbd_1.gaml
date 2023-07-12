@@ -10,20 +10,21 @@ model FinalTermModelcbd1
 global {
 	file shape_file_buildings <- file("../includes/GIS/cbd_buildings.shp");
 	file shape_file_traffic <- file("../includes/GIS/cbd_networks.shp");
+	//file shape_file_traffic <- file("../includes/GIS/ryan/cbd_pedestrian_network_custom.shp");
 	file shape_file_bounds <- file("../includes/GIS/cbd_bounds.shp");
 	file shape_file_sensors <- file("../includes/GIS/cbd_sensors.shp");
 	file point_file_outside_cbd <- file("../includes/GIS/cbd_coming_from_outside.shp");
 	file text_file_population <- file("../includes/data/Demographic_CBD.csv");
 	file text_file_car <- file("../includes/data/car_cbd.csv");
-	file shape_file_trees <- file("../includes/GIS/cbd_tree_canopy2021.shp");
+	file shape_file_trees <- file("../includes/GIS/Tree/cbd_tree.shp");
 	
 	geometry shape <- envelope(shape_file_bounds);
-	float step <- 1 #sec;
+	float step <- 1 #mn;
 	field cell <- field(300,300);
 	//date starting_date <- date("2023-07-09-00-00-00");
 	date starting_date <- date([2023,7,9,6,0,0]);
 	
-	int nb_tram <- 0;
+	int nb_tram <- 50;
 	int nb_bike <- 100;
 	float min_tram_speed <- 10.0 #km / #h;
 	float max_tram_speed <- 26.0 #km / #h;
@@ -50,6 +51,7 @@ global {
 	
 	//UX/UI
 	bool show_building<-false;
+	bool show_landuse<-false;
 	bool show_tram<-true;
 	bool show_car<-true;
 	bool show_bike<-true;
@@ -60,6 +62,7 @@ global {
 	bool show_sensor<-false;
 	bool show_heatmap<-false;
 	bool show_tree<-false;
+	bool show_tree_family<-false;
 	
 	
 	//VISUAL
@@ -82,10 +85,14 @@ global {
 	font text <- font("Arial", 14, #bold);
 	font title <- font("Arial", 18, #bold);
 	
+	//TREE
+	map<string,rgb> uselif_color<-["61+ years"::#green, "31-60 years"::#blue, "21-30 years"::#yellow, "11-20 years"::#orange, "6-10 years (>50% canopy)"::#red, "6-10 years (<50% canopy)"::#red];
+    map<string,rgb> family_color<- [];
+	
 	
 	//PLOT
 	map<rgb,string> legends_pie <- [rgb(71,42,22)::"car",rgb(161,106,69)::"bike", rgb(112,76,51)::"tram",rgb(237,179,140)::"bus",rgb(217,145,93)::"walk", rgb(244,169,160)::"other"];
-	map<rgb,string> legend_path <- [rgb (car_color)::"car",rgb(bike_color)::"bike",rgb(tram_color)::"tram", rgb(people_color)::"peoplel"];
+	map<rgb,string> legend_path <- [rgb (car_color)::"car",rgb(bike_color)::"bike",rgb(tram_color)::"tram", rgb(people_color)::"people"];
 	
 	
 	
@@ -98,7 +105,15 @@ global {
 		
 		create outside_gates from: point_file_outside_cbd;
 		
-		create tree_canopy from: shape_file_trees;
+		//create tree_canopy from: shape_file_trees;
+		create tree from: shape_file_trees;
+		list<string> families <- remove_duplicates(tree collect each.family);
+		loop f over:families{
+			if (f!=nil){
+			  family_color <+ string(f)::rnd_color(255);
+			  	
+			}
+		}
 		
 		create pedestrian_network from: shape_file_traffic with: [type::string(read ("highway"))];
 		big_graph <- as_edge_graph (pedestrian_network);
@@ -142,9 +157,10 @@ global {
 		}
 
 		//create car from the car file
+		int ratio_of_car<-1000;
 		matrix data_car <- matrix(text_file_car);
 		loop i from: 0 to: data_car.rows -1{
-			create car number: int(data_car[1,i])/100 {
+			create car number: int(data_car[1,i])/ratio_of_car {
 			car_group <- int(i+1);
 			if(car_group=1){
 				location <- any_location_in (one_of(carpark_cbd));
@@ -183,6 +199,10 @@ species building {
 	aspect base {
 		draw shape color:building_color;
 	}
+	
+	aspect landuse{
+		draw shape color:landuse_color[type];
+	}
 }
 
 species tree_canopy {
@@ -193,6 +213,32 @@ species tree_canopy {
 		draw shape color:tree_color;
 	}
 }
+
+
+species tree{
+	rgb color;
+	string family;
+	int year_plant;
+	int diameter_b;
+	string useful_lif;
+	aspect base{
+		if(cycle+1899>year_plant){
+			draw circle(10) color:#green;
+		}
+		
+	}
+	
+	aspect useful_lif{
+		draw circle(10) color:uselif_color[useful_lif];
+	}
+	aspect family{
+		if (family !=nil){
+		  draw circle(10) color:family_color[family];	
+		}
+		
+	}
+}
+
 species outside_gates;
 
 species sensor{
@@ -239,11 +285,11 @@ species people skills:[moving] {
 	}
 	
 	aspect base{
-		draw circle(5) color: people_color border: #black;
+		draw circle(4) color: people_color border: #black;
 	}
 	
 	aspect age {
-		draw circle(5) color: age_color[age_group] border: #black;
+		draw circle(4) color: age_color[age_group] border: #black;
 	}
 }
 
@@ -323,7 +369,7 @@ species bike skills:[advanced_driving] {
 	}
 
 	aspect base {
-		draw triangle(5) rotate: heading +90 color:bike_color border: #black ;
+		draw triangle(10) rotate: heading +90 color:bike_color border: #black ;
 	}
 }
 
@@ -337,6 +383,7 @@ experiment cbd_toolkit_virtual type: gui autorun:true virtual:true{
 			
 			
 			species building aspect: base visible:show_building;
+			species building aspect: landuse visible:show_landuse;
 			species pedestrian_network aspect: base visible:show_network;
 			species tram_network aspect: base visible:show_network;
 			species car_network aspect: base visible:show_network;
@@ -345,11 +392,13 @@ experiment cbd_toolkit_virtual type: gui autorun:true virtual:true{
 			species sensor aspect:base visible:show_sensor;
 			species car aspect: base visible:show_car;
 			species bike aspect: base visible:show_bike;
-			species tree_canopy aspect: base visible:show_tree;
+			species tree aspect: useful_lif visible:show_tree;
+		    species tree aspect: family visible:show_tree_family;
 			mesh cell scale: 9 triangulation: true transparency: 0.4 smooth: 3 above: 0.8 color: pal visible:show_heatmap;
 			
 			event "a"  {show_tree<-!show_tree;}
-			event "l"  {show_building<-!show_building;}
+			event "f"  {show_tree_family<-!show_tree_family;}
+			event "l"  {show_landuse<-!show_landuse;}
 			event "t"  {show_tram<-!show_tram;}
 			event "c"  {show_car<-!show_car;}
 			event "b"  {show_bike<-!show_bike;}
@@ -376,6 +425,9 @@ experiment cbd_toolkit_virtual type: gui autorun:true virtual:true{
                 y<-y+gapBetweenWord;
                 draw "(a)rbre (" + show_tree + ")" at: { x,y} color: text_color font: font("Helvetica", uxTextSize, #bold);
                 y<-y+gapBetweenWord;
+                draw "(f)amily (" + show_tree + ")" at: { x,y} color: text_color font: font("Helvetica", uxTextSize, #bold);
+                y<-y+gapBetweenWord;
+                y<-y+gapBetweenWord;
                 draw "(l)anduse (" + show_building + ")" at: { x,y} color: text_color font: font("Helvetica", uxTextSize, #bold);
                 y<-y+gapBetweenWord;
                 draw "(t)ram (" + show_tram + ")" at: { x,y} color: text_color font: font("Helvetica", uxTextSize, #bold);
@@ -388,17 +440,62 @@ experiment cbd_toolkit_virtual type: gui autorun:true virtual:true{
                 y<-y+gapBetweenWord;
                 draw "(p)eople (" + show_people + ")" at: { x,y} color: text_color font: font("Helvetica", uxTextSize, #bold);
                 y<-y+gapBetweenWord;
+                y<-y+gapBetweenWord;
                 draw "(s)ensor (" + show_people + ")" at: { x,y} color: text_color font: font("Helvetica", uxTextSize, #bold);
                 y<-y+gapBetweenWord;
                 draw "(h)eatmap (" + show_heatmap + ")" at: { x,y} color: text_color font: font("Helvetica", uxTextSize, #bold);
                 y<-y+gapBetweenWord;
                 
+                
+                draw "MODE" at: { 60#px, y} color: text_color  font: font("Helvetica", 30, #bold);
+                y <- y + 40#px;
                 loop z over: legend_path.pairs
                 {
                 	draw circle(15#px) at: { 20#px, y} color: rgb(z.key, 0.8) ;
-                	draw z.value at: { 60#px, y} color: # white font: text;
+                	draw z.value at: { 60#px, y} color: rgb(z.key, 0.8)  font: font("Helvetica", 30, #bold);
                     y <- y + 40#px;
                 }
+                
+                if (show_landuse){
+                	y <- y + 40#px;
+                	draw "LANDUSE" at: { 60#px, y} color: text_color  font: font("Helvetica", 30, #bold);
+                	y <- y + 40#px;
+                	loop l over: landuse_color.pairs
+                    {
+                	draw square(15#px) at: { 20#px, y} color: rgb(l.value, 0.8) ;
+                	draw l.key at: { 60#px, y} color: rgb(l.value, 0.8)  font: font("Helvetica", 30, #bold);
+                    y <- y + 40#px;
+                    }
+                	
+                }
+                
+                if(show_tree){
+                	y <- y + 40#px;
+                	draw "TREE LIFESPAN" at: { 60#px, y} color: text_color font: font("Helvetica", 30, #bold);
+                	y <- y + 40#px;
+	            	//for each possible type, we draw a square with the corresponding color and we write the name of the type
+	                loop type over: uselif_color.keys
+	                {
+	                    draw circle(10#px) at: { 20#px, y } color: uselif_color[type] border: #white;
+	                    draw type at: { 40#px, y + 4#px } color: # black font: font("Helvetica", 18, #bold);
+	                    y <- y + 25#px;
+	                }
+                }
+                if (show_tree_family){
+                	 y <- y + 40#px;
+                	 draw "TREE SPECIES" at: { 60#px, y} color: text_color font: font("Helvetica", 32, #bold);
+            		//for each possible type, we draw a square with the corresponding color and we write the name of the type
+   					y <- y + 40#px;
+	                loop type over: family_color.keys
+	                {
+	                    draw circle(5#px) at: { 20#px, y } color: family_color[type] border: #white;
+	                    draw type at: { 40#px, y + 4#px } color: # black font: font("Helvetica", 18, #bold);
+	                    y <- y + 18#px;
+	                }
+                	
+                }
+               
+                
 			}	
 		}
 		
@@ -473,7 +570,7 @@ experiment cbd_toolkit_virtual type: gui autorun:true virtual:true{
 			
 			chart "Tree Canopy Coverage" type:histogram   size:{0.42,0.42} position:{0.55,0.55} background: background_color color: rgb(236,102,45)
 			tick_font: font('BrownPro' , 14, #plain) label_text_color: rgb(236,102,45) title_font: font( 'BrownPro', 32.0, #plain) 
-			label_font: font('BrownPro', 14 #plain) legend_font: font('BrownPro' , 14, #plain) 
+			label_font: font('BrownPro', 14 #plain)  legend_font: font('BrownPro' , 14, #plain) 
 			x_serie_labels: ["categ1","Mode of Transport"]
 			style:"3d"
 			series_label_position: xaxis
