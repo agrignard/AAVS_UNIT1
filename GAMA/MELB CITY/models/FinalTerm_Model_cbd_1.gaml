@@ -15,12 +15,7 @@ global {
 	file point_file_outside_cbd <- file("../includes/GIS/cbd_coming_from_outside.shp");
 	file text_file_population <- file("../includes/data/Demographic_CBD.csv");
 	file text_file_car <- file("../includes/data/car_cbd.csv");
-	
-	//CANOPY
-	file shape_file_trees_2014 <- file("../includes/GIS/Tree/cbd_tree_canopy_2014.shp");
-	file shape_file_trees_2016 <- file("../includes/GIS/Tree/cbd_tree_canopy_2016.shp");
-	file shape_file_trees_2018 <- file("../includes/GIS/Tree/cbd_tree_canopy_2018.shp");
-	file shape_file_trees_2021 <- file("../includes/GIS/Tree/cbd_tree_canopy_2021.shp");
+	file shape_file_trees <- file("../includes/GIS/cbd_tree_canopy2021.shp");
 	
 	geometry shape <- envelope(shape_file_bounds);
 	float step <- 1 #sec;
@@ -78,9 +73,6 @@ global {
 	rgb tree_color<-rgb(173,255,47);
 	float network_line_width<-4#px;
 	
-	//TREE CANOPY
-	map<int,rgb> treeColor <- [2014::rgb(173,255,47),2016::rgb(0,250,150),2018::rgb(102,205,170),2021::rgb(0,139,139)];
-	
 	
 	
 	//POLUTION COLOR
@@ -106,20 +98,7 @@ global {
 		
 		create outside_gates from: point_file_outside_cbd;
 		
-		create tree_canopy from: shape_file_trees_2014{
-			year<-2021;
-		}
-		create tree_canopy from: shape_file_trees_2018{
-			year<-2018;
-		}
-		create tree_canopy from: shape_file_trees_2016{
-			year<-2016;
-		}
-		create tree_canopy from: shape_file_trees_2014{
-			year<-2014;
-		}
-		
-		
+		create tree_canopy from: shape_file_trees;
 		
 		create pedestrian_network from: shape_file_traffic with: [type::string(read ("highway"))];
 		big_graph <- as_edge_graph (pedestrian_network);
@@ -209,10 +188,9 @@ species building {
 species tree_canopy {
 	string type; 
 	rgb color;
-	int year;
 	
 	aspect base {
-		draw shape color:treeColor[year];
+		draw shape color:tree_color;
 	}
 }
 species outside_gates;
@@ -357,7 +335,7 @@ experiment cbd_toolkit_virtual type: gui autorun:true virtual:true{
 		display Screen1 type: 3d axes: false background:background_color virtual:true{
 			rotation angle:-21;
 			
-			//image '../includes/background.png' refresh: false;
+			
 			species building aspect: base visible:show_building;
 			species pedestrian_network aspect: base visible:show_network;
 			species tram_network aspect: base visible:show_network;
