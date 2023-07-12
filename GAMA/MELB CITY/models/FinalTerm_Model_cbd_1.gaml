@@ -59,6 +59,7 @@ global {
 	
 	//VISUAL
 	rgb background_color<-rgb(251,227,190);
+	rgb text_color<-rgb(236,102,44);
 	rgb building_color<-rgb(236,102,44);
 	rgb people_color<-rgb(13,13,7);
 	rgb car_color<-rgb(231, 44, 17);
@@ -75,6 +76,11 @@ global {
 	map<rgb,string> legends <- [rgb(231, 111, 81)::"residential",rgb(42, 157, 143)::"office",rgb(244, 162, 97)::"mixed",rgb(233, 196, 106)::"retail",rgb(38, 70, 83)::"university", rgb(33, 158, 188)::"entertainment"];
 	font text <- font("Arial", 14, #bold);
 	font title <- font("Arial", 18, #bold);
+	
+	
+	//PLOT
+	map<rgb,string> legends_pie <- [rgb(71,42,22)::"car",rgb(161,106,69)::"bike", rgb(112,76,51)::"tram",rgb(237,179,140)::"bus",rgb(217,145,93)::"walk", rgb(244,169,160)::"other"];
+	
 	
 	
 	init {
@@ -330,29 +336,29 @@ experiment cbd_toolkit_virtual type: gui autorun:true virtual:true{
 			
 			overlay position: { 50#px,50#px} size: { 1 #px, 1 #px } background: # black border: #black rounded: false
 			{
-				draw "CBD ToolKIT v1.0" at: {0,0} color: #white font: font("Helvetica", 50, #bold);
+				draw "CBD ToolKIT v1.0" at: {0,0} color: text_color font: font("Helvetica", 50, #bold);
 				
-				draw "Date: " + current_date at: {0,50#px} color: #white font: font("Helvetica", 20, #bold);
+				draw "Date: " + current_date at: {0,50#px} color: text_color font: font("Helvetica", 20, #bold);
 				
                 
                 float x<-0#px;
                 float gapBetweenWord<-100#px;
                 
-                draw "UI/UX (Press the following button)" at: { x,world.shape.height+75#px} color: #white font: font("Helvetica", 20, #bold);
+                draw "UI/UX (Press the following button)" at: { x,world.shape.height+75#px} color: text_color font: font("Helvetica", 20, #bold);
               
-                draw "(b)uilding (" + show_building + ")" at: { x,world.shape.height+100#px} color: #white font: font("Helvetica", 10, #bold);
+                draw "(b)uilding (" + show_building + ")" at: { x,world.shape.height+100#px} color: text_color font: font("Helvetica", 10, #bold);
                 x<-x+gapBetweenWord;
-                draw "(t)ram (" + show_tram + ")" at: { x,world.shape.height+100#px} color: #white font: font("Helvetica", 10, #bold);
+                draw "(t)ram (" + show_tram + ")" at: { x,world.shape.height+100#px} color: text_color font: font("Helvetica", 10, #bold);
                 x<-x+gapBetweenWord;
-                draw "(c)ar (" + show_car + ")" at: { x,world.shape.height+100#px} color: #white font: font("Helvetica", 10, #bold);
+                draw "(c)ar (" + show_car + ")" at: { x,world.shape.height+100#px} color: text_color font: font("Helvetica", 10, #bold);
                 x<-x+gapBetweenWord;
-                draw "(n)etwork (" + show_network + ")" at: { x,world.shape.height+100#px} color: #white font: font("Helvetica", 10, #bold);
+                draw "(n)etwork (" + show_network + ")" at: { x,world.shape.height+100#px} color: text_color font: font("Helvetica", 10, #bold);
                 x<-x+gapBetweenWord;
-                draw "(p)eople (" + show_people + ")" at: { x,world.shape.height+100#px} color: #white font: font("Helvetica", 10, #bold);
+                draw "(p)eople (" + show_people + ")" at: { x,world.shape.height+100#px} color: text_color font: font("Helvetica", 10, #bold);
                 x<-x+gapBetweenWord;
-                draw "(s)ensor (" + show_people + ")" at: { x,world.shape.height+100#px} color: #white font: font("Helvetica", 10, #bold);
+                draw "(s)ensor (" + show_people + ")" at: { x,world.shape.height+100#px} color: text_color font: font("Helvetica", 10, #bold);
                 x<-x+gapBetweenWord;
-                draw "(h)eatmap (" + show_heatmap + ")" at: { x,world.shape.height+100#px} color: #white font: font("Helvetica", 10, #bold);
+                draw "(h)eatmap (" + show_heatmap + ")" at: { x,world.shape.height+100#px} color: text_color font: font("Helvetica", 10, #bold);
                 x<-x+gapBetweenWord;
 			}	
 		}
@@ -361,26 +367,52 @@ experiment cbd_toolkit_virtual type: gui autorun:true virtual:true{
 		
 		display Screen2 type: 2d virtual:true background:background_color
 		{
-			chart "Mode of Transport" type: pie style: ring background: # black color: # white label_text_color: #black  axes: #red  title_font: font( 'Serif', 32.0, #italic)
-			tick_font: font('Monospaced' , 14, #bold) label_font: font('Arial', 32 #bold) x_label: 'Nice Xlabel' y_label:
-			'Nice Ylabel' size:{0.5,0.5} position:{0,0.5}
+			overlay position: { 50#px,50#px} size: { 1 #px, 1 #px } background: # black border: #black rounded: false
 			{
-				data "Car" value: 1 color: # black;
-				data "Tram" value: 2 color: # blue;
-				data "Bike" value: 3 color: # blue;
-				data "Walk" value: 4 color: # blue;
+			    draw "CBD ToolKIT v1.0" at: {0,0} color: text_color font: font("Helvetica", 50, #bold);
+			    draw "Date: " + current_date at: {0,50#px} color: text_color font: font("Helvetica", 20, #bold);
+			}
+			
+			
+			chart "Mode of Transport proportion" type: pie style: ring background: background_color color: rgb(236,102,45) label_text_color: rgb(236,102,45)  axes: #red  title_font: font( 'BrownPro', 32.0, #plain)
+			tick_font: font('BrownPro' , 14, #plain) label_font: font('BrownPro', 32 #plain) x_label: 'Nice Xlabel' y_label:
+			'Nice Ylabel' size:{0.5,0.5} position:{0,0.1}  label_background_color: background_color tick_line_color: rgb(255,255,255)
+			legend_font: font('BrownPro' , 14, #plain) 
+			
+			{
+				data "Car" value: (length(car)) color: rgb(71,42,22);
+				data "Tram" value: (length(tram)) color: rgb(112,76,51);
+				data "Bike" value: (-1) color: rgb(161,106,69);
+				data "Walk" value: (length(people)) color: rgb(217,145,93);
+				data "Bus" value: (-1) color: rgb(237,179,140);
+				data "Other" value:(-1) color: rgb(244,169,160);
 				
 			}
 			
-			
-			chart "Nice Ring Pie Chart2" type: pie style: ring background: # darkgreen color: # lightgreen label_text_color: #red label_background_color: #lightgray axes: #red  title_font: font( 'Serif', 32.0, #italic)
-			tick_font: font('Monospaced' , 14, #bold) label_font: font('Arial', 32 #bold) x_label: 'Nice Xlabel' y_label:
-			'Nice Ylabel' size:{0.5,0.5} position:{0.5,0}
+			chart "Polution Level" type:histogram   size:{0.5,0.5} position:{0.5,0.1} background: background_color 
+			x_serie_labels: ["categ1","categ2"]
+			style:"3d"
+			series_label_position: xaxis
 			{
-				data "BCC" value: 100 + cos(100 * cycle) * cycle * cycle color: # black;
-				data "ABC" value: cycle * cycle color: # blue;
-				data "BCD" value: cycle + 1;
+				data "Hazardous" value:cell 
+				accumulate_values: true						
+				color: rgb(112,76,51);
+				
+				data "Bad" value:cycle*cycle 
+				accumulate_values: true						
+			    color:rgb(217,145,93);
+			    
+				data "Average" value:cycle+1
+				accumulate_values: true						
+				marker_shape:marker_circle ;
+				
+				data "Good" value:cycle+1
+				accumulate_values: true						
+				marker_shape:marker_circle ;
 			}
+			
+		
+
 
 		}
 	}
