@@ -315,36 +315,14 @@ species car skills:[advanced_driving] {
 }
 
 species bike skills:[advanced_driving] {
-	int scale<-3;
-	init {
-		vehicle_length <- 15#m ;
-		max_speed <- 40 #km / #h;
-		max_acceleration <- 3.5;
-	}
-	int car_group;
-	point target;
-	float leaving_proba <- 0.05;
-	string state;
-	
-	reflex leave when: (target = nil) and (flip(leaving_proba)) {
-		target <- any_location_in(one_of(building));
-	}
+
 	//Reflex to move to the target building moving on the road network
-	reflex move when: target != nil {
-	//we use the return_path facet to return the path followed
-		path path_followed <- goto(target: target, on: car_network_graph, recompute_path: false, return_path: true);
-
-		//if the path followed is not nil (i.e. the agent moved this step), we use it to increase the pollution level of overlapping cell
-		if (path_followed != nil and path_followed.shape != nil) {
-			cell[path_followed.shape.location] <- cell[path_followed.shape.location] + 10;					
-		}
-
-		if (location = target) {
-			target <- nil;
-		} }
+	reflex move {
+	do wander on:car_network_graph;
+	}
 
 	aspect base {
-		draw triangle(5*scale) rotate: heading +90 color:bike_color border: #black ;
+		draw triangle(5) rotate: heading +90 color:bike_color border: #black ;
 	}
 }
 
@@ -386,29 +364,33 @@ experiment cbd_toolkit_virtual type: gui autorun:true virtual:true{
 				draw "Date: " + current_date at: {0,50#px} color: text_color font: font("Helvetica", 20, #bold);
 				
                 
-                float x<-0#px;
-                float gapBetweenWord<-100#px;
+                point UX_Position<-{world.shape.width*1.25,0#px};
+                float x<-UX_Position.x;
+                float y<-UX_Position.y;
+        
+                float gapBetweenWord<-25#px;
+                float uxTextSize<-20.0;
                 
-                draw "UI/UX (Press the following button)" at: { x,world.shape.height+75#px} color: text_color font: font("Helvetica", 20, #bold);
-              
-                draw "(a)rbre (" + show_tree + ")" at: { x,world.shape.height+100#px} color: text_color font: font("Helvetica", 10, #bold);
-                x<-x+gapBetweenWord;
-                draw "(l)anduse (" + show_building + ")" at: { x,world.shape.height+100#px} color: text_color font: font("Helvetica", 10, #bold);
-                x<-x+gapBetweenWord;
-                draw "(t)ram (" + show_tram + ")" at: { x,world.shape.height+100#px} color: text_color font: font("Helvetica", 10, #bold);
-                x<-x+gapBetweenWord;
-                draw "(c)ar (" + show_car + ")" at: { x,world.shape.height+100#px} color: text_color font: font("Helvetica", 10, #bold);
-                x<-x+gapBetweenWord;
-                 draw "(b)ike (" + show_bike + ")" at: { x,world.shape.height+100#px} color: text_color font: font("Helvetica", 10, #bold);
-                x<-x+gapBetweenWord;
-                draw "(n)etwork (" + show_network + ")" at: { x,world.shape.height+100#px} color: text_color font: font("Helvetica", 10, #bold);
-                x<-x+gapBetweenWord;
-                draw "(p)eople (" + show_people + ")" at: { x,world.shape.height+100#px} color: text_color font: font("Helvetica", 10, #bold);
-                x<-x+gapBetweenWord;
-                draw "(s)ensor (" + show_people + ")" at: { x,world.shape.height+100#px} color: text_color font: font("Helvetica", 10, #bold);
-                x<-x+gapBetweenWord;
-                draw "(h)eatmap (" + show_heatmap + ")" at: { x,world.shape.height+100#px} color: text_color font: font("Helvetica", 10, #bold);
-                x<-x+gapBetweenWord;
+                draw "UI/UX" at: { x,y} color: text_color font: font("Helvetica", uxTextSize*2, #bold);
+                y<-y+gapBetweenWord;
+                draw "(a)rbre (" + show_tree + ")" at: { x,y} color: text_color font: font("Helvetica", uxTextSize, #bold);
+                y<-y+gapBetweenWord;
+                draw "(l)anduse (" + show_building + ")" at: { x,y} color: text_color font: font("Helvetica", uxTextSize, #bold);
+                y<-y+gapBetweenWord;
+                draw "(t)ram (" + show_tram + ")" at: { x,y} color: text_color font: font("Helvetica", uxTextSize, #bold);
+                y<-y+gapBetweenWord;
+                draw "(c)ar (" + show_car + ")" at: { x,y} color: text_color font: font("Helvetica", uxTextSize, #bold);
+                y<-y+gapBetweenWord;
+                 draw "(b)ike (" + show_bike + ")" at: { x,y} color: text_color font: font("Helvetica", uxTextSize, #bold);
+                y<-y+gapBetweenWord;
+                draw "(n)etwork (" + show_network + ")" at: { x,y} color: text_color font: font("Helvetica", uxTextSize, #bold);
+                y<-y+gapBetweenWord;
+                draw "(p)eople (" + show_people + ")" at: { x,y} color: text_color font: font("Helvetica", uxTextSize, #bold);
+                y<-y+gapBetweenWord;
+                draw "(s)ensor (" + show_people + ")" at: { x,y} color: text_color font: font("Helvetica", uxTextSize, #bold);
+                y<-y+gapBetweenWord;
+                draw "(h)eatmap (" + show_heatmap + ")" at: { x,y} color: text_color font: font("Helvetica", uxTextSize, #bold);
+                y<-y+gapBetweenWord;
 			}	
 		}
 		
