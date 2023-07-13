@@ -70,15 +70,15 @@ global {
 	
 	
 	//VISUAL
-	rgb background_color<-rgb(251,227,190);
-	rgb text_color<-rgb(236,102,44);
-	rgb building_color<-rgb(236,102,44);
-	rgb people_color<-rgb(13,13,7);
-	rgb car_color<-rgb(231, 44, 17);
-	rgb bike_color<-rgb(22,121,171);
-	rgb tram_color<-rgb(15,135,82);
-	rgb tree_color<-rgb(173,255,47);
-	float network_line_width<-4#px;
+	rgb background_color<-rgb(0,0,0);
+	rgb text_color<-rgb(255,255,255);
+	rgb building_color<-rgb(102,102,102);
+	rgb people_color<-rgb(255,255,255);
+	rgb car_color<-rgb(254, 65, 18);
+	rgb bike_color<-rgb(255,186,0);
+	rgb tram_color<-rgb(0,64,255);
+	rgb tree_color<-rgb(137,225,174);
+	float network_line_width<-1#px;
 	
 	
 	
@@ -302,11 +302,11 @@ species people skills:[moving] {
 	}
 	
 	aspect base{
-		draw circle(4) color: people_color border: #black;
+		draw circle(4) color: people_color ;
 	}
 	
 	aspect age {
-		draw circle(4) color: age_color[age_group] border: #black;
+		draw circle(4) color: age_color[age_group] ;
 	}
 }
 
@@ -323,8 +323,8 @@ species tram skills:[advanced_driving] {
 	}
 
 	aspect base {
-		draw box(20*scale, 3*scale,2*scale) rotate: heading color: rgb(15,135,82) border: #black ;
-		draw box(10*scale, 3*scale,2.5*scale) rotate: heading color: #white border: #black ;
+		draw box(20*scale, 3*scale,2*scale) rotate: heading color: rgb(0,64,255) ;
+		draw box(10*scale, 3*scale,2.5*scale) rotate: heading color: #white ;
 	}
 }
 
@@ -358,7 +358,7 @@ species car skills:[advanced_driving] {
 		} }
 
 	aspect base {
-		draw rectangle(5*scale, 2*scale) rotate: heading color:car_color border: #black ;
+		draw rectangle(5*scale, 2*scale) rotate: heading color:car_color ;
 	}
 }
 
@@ -370,7 +370,7 @@ species bike skills:[advanced_driving] {
 	}
 
 	aspect base {
-		draw triangle(10) rotate: heading +90 color:bike_color border: #black ;
+		draw triangle(10) rotate: heading +90 color:bike_color ;
 	}
 }
 
