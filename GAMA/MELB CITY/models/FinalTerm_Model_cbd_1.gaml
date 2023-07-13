@@ -423,7 +423,7 @@ experiment cbd_toolkit_virtual type: gui autorun:true virtual:true{
 		
 		display Screen1 type: 3d axes: false background:background_color virtual:true{
 			rotation angle:-21;
-			
+			camera 'default' location: {1020.366,572.1738,2688.8238} target: {1020.366,572.1268,0.0};
 			
 			species building aspect: base visible:show_building;
 			species building aspect: landuse visible:show_landuse;
@@ -554,7 +554,7 @@ experiment cbd_toolkit_virtual type: gui autorun:true virtual:true{
 		
 		
 		
-		display Screen2 type: 2d virtual:true background:background_color antialias:true 
+		display Screen2 type: 2d virtual:true background:background_color antialias:false 
 		{
 			overlay position: { 50#px,50#px} size: { 1 #px, 1 #px } background: # black border: #black rounded: false
 			{
