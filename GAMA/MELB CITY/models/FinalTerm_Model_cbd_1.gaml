@@ -260,16 +260,12 @@ species tree{
 	}
 	
 	aspect useful_lif{
-		
-			draw circle(10) color:uselif_color[useful_lif];
-		
-		
+	   draw circle(5+diameter_b*0.25) color:uselif_color[useful_lif];
 	}
 	aspect family{
 		if (family !=nil){
-		  draw circle(10) color:group_to_color[group];	
+		  draw circle(5+diameter_b*0.25) color:group_to_color[group];	
 		}
-		
 	}
 }
 
@@ -417,7 +413,7 @@ species car skills:[advanced_driving] {
 	}
 	int car_group;
 	point target;
-	float leaving_proba <- 0.05;
+	float leaving_proba <- 0.5;
 	string state;
 	
 	reflex leave when: (target = nil) and (flip(leaving_proba)) {
@@ -435,7 +431,8 @@ species car skills:[advanced_driving] {
 
 		if (location = target) {
 			target <- nil;
-		} }
+		} 
+	}
 
 	aspect base {
 		draw rectangle(5*scale, 2*scale) rotate: heading color:car_color ;
@@ -623,7 +620,8 @@ experiment cbd_toolkit_virtual type: gui autorun:true virtual:true{
 		{
 			overlay position: { 50#px,50#px} size: { 1 #px, 1 #px } background: # black border: #black rounded: false
 			{
-			    draw image_file('../includes/interface/cbdlogov1.png') at: { 200#px, 25#px } size:{367.5#px,75#px};
+			    draw "CBD ToolKIT v1.0" at: {0,0} color: text_color font: font("Helvetica", 50, #bold);
+			    //draw image_file('../includes/interface/cbdlogov1.png') at: { 200#px, 25#px } size:{367.5#px,75#px};
 			    
 			    //draw "Date: " + current_date at: {0,250#px} color: text_color font: font("Helvetica", 20, #bold);
 			}
@@ -651,23 +649,23 @@ experiment cbd_toolkit_virtual type: gui autorun:true virtual:true{
 			style:"3d"
 			series_label_position: xaxis
 			{
-				data "Walk" value:(100+cycle)
+				data "Walk" value:0
 				accumulate_values: false						
 			    color:rgb(217,145,93);
 			    
-				data "Bike" value:(100+cycle)
+				data "Bike" value: 0
 				accumulate_values: false						
 				color: rgb(161,106,69);
 			    
-				data "Tram" value:(24*55*1+cycle)
+				data "Tram" value:length(tram)*55
 				accumulate_values: false						
 				color: rgb(112,76,51);
 				
-				data "Car" value:(length(car)*3)
+				data "Car" value:(length(car))*270
 				accumulate_values: false						
 				color: rgb(71,42,22);
 				
-				data "Reduced by Trees" value:(length(tree_canopy)*1)
+				data "Reduced by Trees" value:-(length(tree)*5)
 				accumulate_values: false						
 				color: rgb(244,216,189);
 			}
@@ -694,23 +692,23 @@ experiment cbd_toolkit_virtual type: gui autorun:true virtual:true{
 			style:"3d"
 			series_label_position: xaxis
 			{
-				data "1743" value:(length(tree_canopy)*20)
+				data "1743" value:(80)
 				accumulate_values: false						
 			    color:rgb(217,145,93);
 			    
-				data "1900" value:(length(tree_canopy)*3)
+				data "1900" value:(10)
 				accumulate_values: false						
 				color: rgb(161,106,69);
 			    
-				data "Now" value:(length(tree_canopy)*5)
+				data "Now" value:(20)
 				accumulate_values: false						
 				color: rgb(112,76,51);
 				
-				data "Try it!" value:(length(tree_canopy)*8)
+				data "Try it!" value:(0)
 				accumulate_values: false						
 				color: rgb(71,42,22);
 				
-				data "2040" value:(length(tree_canopy)*10)
+				data "2040" value:(40)
 				accumulate_values: false						
 				color: rgb(244,216,189);
 			}
