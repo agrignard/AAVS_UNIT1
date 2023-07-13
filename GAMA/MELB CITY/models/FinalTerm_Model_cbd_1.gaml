@@ -40,6 +40,7 @@ global {
 	graph tram_network_graph;
 	graph bike_network_graph;
 	graph pedestrian_network_graph;
+	graph bus_network_graph;
 	
 	float reducefactor<-0.1;
 	
@@ -50,7 +51,7 @@ global {
 	
 	map<string,rgb> landuse_color<-["residential"::rgb(231, 111, 81),"university"::rgb(38, 70, 83), "mixed"::rgb(244, 162, 97), "office"::rgb(42, 157, 143), "retail"::rgb(233, 196, 106)
 		, "entertainment"::rgb(33, 158, 188),"carpark"::rgb(92, 103, 125),"park"::rgb(153, 217, 140)];
-	map<string,rgb> path_type_color<-["car"::rgb(car_color),"bike"::rgb(bike_color),"tram"::rgb(tram_color),"people"::rgb(people_color)];
+	map<string,rgb> path_type_color<-["car"::rgb(car_color),"bike"::rgb(bike_color),"tram"::rgb(tram_color),"people"::rgb(people_color),"bus"::rgb(bus_color)];
 
    
 	
@@ -124,7 +125,8 @@ global {
 		bike_network_graph <- as_edge_graph (bikeway);
 		list<traffic_network> carway <- traffic_network where (each.type="car");
 		car_network_graph <- as_edge_graph (carway);
-		
+		list<traffic_network> busway <- traffic_network where (each.type="bus");
+		bus_network_graph <- as_edge_graph (busway);
 		
 		
 		//create tree_canopy from: shape_file_trees;
@@ -268,6 +270,10 @@ species traffic_network{
 	action change_type4{
 	type <- "tram";
 	}
+	user_command "change road type to bus" action: change_type5;
+	action change_type5{
+	type <- "bus";
+	}
 	
 	aspect base {
 		draw shape color:path_type_color[type] width:network_line_width;
@@ -355,7 +361,7 @@ species bus skills:[advanced_driving]{
 	//Reflex to move to the target building moving on the road network
 	reflex move when: target != nil {
 	//we use the return_path facet to return the path followed
-		path path_followed <- goto(target: target, on: car_network_graph, recompute_path: false, return_path: true);
+		path path_followed <- goto(target: target, on: bus_network_graph, recompute_path: false, return_path: true);
 
 		//if the path followed is not nil (i.e. the agent moved this step), we use it to increase the pollution level of overlapping cell
 		if (path_followed != nil and path_followed.shape != nil) {
