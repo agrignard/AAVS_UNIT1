@@ -441,7 +441,7 @@ experiment cbd_toolkit_virtual type: gui autorun:true virtual:true{
 		
 		display Screen1 type: 3d axes: false background:background_color virtual:true{
 			rotation angle:-21;
-			camera 'default' location: {1020.366,572.1738,2688.8238} target: {1020.366,572.1268,0.0};
+			camera 'default' location: {1058.0439,631.227,2080.5606} target: {1058.0439,631.1907,0.0};
 			
 			species building aspect: base visible:show_building;
 			species building aspect: landuse visible:show_landuse;
