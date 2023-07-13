@@ -181,6 +181,11 @@ global {
 				working_place <- one_of(industrial_buildings);
 				objective <- "resting";
 			}
+		}
+		
+		create people number:100{
+			justwonder<-true;
+			location <- any_location_in (one_of(building));
 		}	
 		
 
@@ -242,6 +247,16 @@ global {
 			location <- any_location_in (one_of(carpark_cbd));	
 	    }
 	}
+	
+	reflex updatePeople{
+		ask rnd(2) among people where (each.justwonder){
+			do die;
+		}
+		create people number: rnd(2) {
+			justwonder<-true;
+			location <- any_location_in (one_of(building));	
+	    }
+	}
 }
 
 species building {
@@ -293,6 +308,8 @@ species tree{
 	}
 }
 
+
+
 species traffic_network{
 	string type;
 	string mode;
@@ -301,23 +318,29 @@ species traffic_network{
 	//command display after right click
 	user_command "change road type to car" action: change_type1;
 	action change_type1{
-	type <- "car";
+	type <- "driveway";
+	mode<-"car";
+	
 	}
 	user_command "change road type to pedestrian" action: change_type2;
 	action change_type2{
-	type <- "pedestain";
+	type <- "footway";
+	mode<-"people";
 	}
 	user_command "change road type to bike" action: change_type3;
 	action change_type3{
-	type <- "pedestain";
+	type <- "footway";
+	mode<-"people";
 	}
 	user_command "change road type to tram" action: change_type4;
 	action change_type4{
-	type <- "tram";
+	type <- "tramway";
+	mode<-"tram";
 	}
 	user_command "change road type to bus" action: change_type5;
 	action change_type5{
-	type <- "bus";
+	type <- "driveway";
+	mode<-"car";
 	}
 	
 	aspect base {
@@ -343,6 +366,8 @@ species people skills:[moving] {
 	point the_target <- nil ;
 	int age_group;
 	list<int> taffic_mode;
+	
+	bool justwonder;
 		
 	reflex time_to_work when: current_date.hour = start_work and objective = "resting"{
 		objective <- "working" ;
@@ -359,6 +384,10 @@ species people skills:[moving] {
 		if the_target = location {
 			the_target <- nil ;
 		}
+	}
+	
+	reflex simplemove when:justwonder{
+		
 	}
 	
 	aspect base{
