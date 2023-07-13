@@ -468,11 +468,13 @@ experiment cbd_toolkit_virtual type: gui autorun:true virtual:true{
 			event "s"  {show_sensor<-!show_sensor;}
 			event "h"  {show_heatmap<-!show_heatmap;}
 			
+			
 			overlay position: { 50#px,50#px} size: { 1 #px, 1 #px } background: # black border: #black rounded: false
 			{
-				draw "CBD ToolKIT v1.0" at: {0,0} color: text_color font: font("Verdana", 50, #bold);
+	
+				draw image_file('../includes/interface/cbdlogov1.png') at: { 500#px,50#px } size:{735#px,150#px};
 				
-				draw "Date: " + current_date at: {0,50#px} color: text_color font: font("Helvetica", 20, #bold);
+				draw "Date: " + current_date at: {0,200#px} color: text_color font: font("Helvetica", 20, #bold);
 				
                 
                 point UX_Position<-{world.shape.width*1.25,0#px};
@@ -591,8 +593,8 @@ experiment cbd_toolkit_virtual type: gui autorun:true virtual:true{
 		{
 			overlay position: { 50#px,50#px} size: { 1 #px, 1 #px } background: # black border: #black rounded: false
 			{
-			    draw "CBD ToolKIT v1.0" at: {0,0} color: text_color font: font("Helvetica", 50, #bold);
-			    draw "Date: " + current_date at: {0,50#px} color: text_color font: font("Helvetica", 20, #bold);
+			    draw image_file('../includes/interface/cbdlogov1.png') at: { 500#px, 50#px } size:{735#px,150#px};
+			    draw "Date: " + current_date at: {0,250#px} color: text_color font: font("Helvetica", 20, #bold);
 			}
 			
 			
