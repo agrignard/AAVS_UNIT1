@@ -669,10 +669,10 @@ experiment cbd_toolkit_demo type: gui autorun:true parent:cbd_toolkit_virtual{
 	float minimum_cycle_duration<-0.05;
 	
 	output{
-		display table parent:Screen1 fullscreen:1{
+		display table parent:Screen1 fullscreen:0{
 			camera 'default' location: {1111.786,1109.9386,2688.8238} target: {1111.786,1109.8916,0.0};
 		}
-		display screen parent:Screen2 fullscreen:2{}
+		display screen parent:Screen2 fullscreen:1{}
 	}
 }
 
