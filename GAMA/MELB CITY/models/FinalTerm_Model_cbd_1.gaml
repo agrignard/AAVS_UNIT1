@@ -176,6 +176,8 @@ global {
 		
 		
 		create bike number:nb_bike;
+		
+		create sensor from:shape_file_sensors;
 
 		
 	}
@@ -425,7 +427,7 @@ experiment cbd_toolkit_virtual type: gui autorun:true virtual:true{
                 draw "(f)amily (" + show_tree + ")" at: { x,y} color: text_color font: font("Helvetica", uxTextSize, #bold);
                 y<-y+gapBetweenWord;
                 y<-y+gapBetweenWord;
-                draw "(l)anduse (" + show_building + ")" at: { x,y} color: text_color font: font("Helvetica", uxTextSize, #bold);
+                draw "(l)anduse (" + show_landuse + ")" at: { x,y} color: text_color font: font("Helvetica", uxTextSize, #bold);
                 y<-y+gapBetweenWord;
                 draw "(t)ram (" + show_tram + ")" at: { x,y} color: text_color font: font("Helvetica", uxTextSize, #bold);
                 y<-y+gapBetweenWord;
@@ -438,7 +440,7 @@ experiment cbd_toolkit_virtual type: gui autorun:true virtual:true{
                 draw "(p)eople (" + show_people + ")" at: { x,y} color: text_color font: font("Helvetica", uxTextSize, #bold);
                 y<-y+gapBetweenWord;
                 y<-y+gapBetweenWord;
-                draw "(s)ensor (" + show_people + ")" at: { x,y} color: text_color font: font("Helvetica", uxTextSize, #bold);
+                draw "(s)ensor (" + show_sensor + ")" at: { x,y} color: text_color font: font("Helvetica", uxTextSize, #bold);
                 y<-y+gapBetweenWord;
                 draw "(h)eatmap (" + show_heatmap + ")" at: { x,y} color: text_color font: font("Helvetica", uxTextSize, #bold);
                 y<-y+gapBetweenWord;
