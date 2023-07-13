@@ -19,7 +19,7 @@ global {
 	file shape_file_trees <- file("../includes/GIS/Tree/cbd_tree.shp");
 	
 	geometry shape <- envelope(shape_file_bounds);
-	float step <- 1 #mn;
+	float step <- 10 #sec;
 	field cell <- field(300,300);
 	//date starting_date <- date("2023-07-09-00-00-00");
 	date starting_date <- date([2023,7,9,6,0,0]);
@@ -54,6 +54,10 @@ global {
 	map<string,rgb> path_type_color<-["car"::rgb(car_color),"bike"::rgb(bike_color),"tram"::rgb(tram_color),"people"::rgb(people_color),"bus"::rgb(bus_color)];
 
    
+   
+   
+    //ABM
+    bool simpleSimulation<-true;   
 	
 	//UX/UI
 	bool show_building<-false;
@@ -78,9 +82,9 @@ global {
 	rgb building_color<-rgb(102,102,102);
 	rgb people_color<-rgb(255,222,94);
 	rgb car_color<-rgb(244,40,41);
-	rgb bus_color<-rgb(30,233,182);
+	rgb bus_color<-rgb(0,64,255);
 	rgb bike_color<-rgb(217,111,248);
-	rgb tram_color<-rgb(0,64,255);
+	rgb tram_color<-rgb(30,233,182);
 	rgb tree_color<-rgb(0,255,209);
 	float network_line_width<-1#px;
 	
@@ -125,7 +129,7 @@ global {
 		bike_network_graph <- as_edge_graph (bikeway);
 		list<traffic_network> carway <- traffic_network where (each.type="car");
 		car_network_graph <- as_edge_graph (carway);
-		list<traffic_network> busway <- traffic_network where (each.type="bus");
+		list<traffic_network> busway <- traffic_network where (each.type="car");
 		bus_network_graph <- as_edge_graph (busway);
 		
 		
@@ -144,21 +148,21 @@ global {
 		matrix data_people <- matrix(text_file_population);
 		loop i from: 0 to: data_people.rows -1{
 			
-			create people number:int(data_people[1,i])/10{
-			age_group <- int(i+1);
-			speed <- float(data_people[2,i]);
-			if(age_group=6){
-				location <- any_location_in (one_of(outside_gates));
-			} else {
-				location <- any_location_in (one_of(residential_buildings));
-			}
-			taffic_mode<<+ [int(data_people[3,i]),int(data_people[4,i]),int(data_people[5,i]),int(data_people[6,i]),int(data_people[7,i])];
-			start_work <- int(data_people[8,i]);
-			end_work <- int(data_people[9,i]);
-			living_place <- one_of(residential_buildings);
-			working_place <- one_of(industrial_buildings);
-			objective <- "resting";
-			}
+			/*create people number:int(data_people[1,i])/10{
+				age_group <- int(i+1);
+				speed <- float(data_people[2,i]);
+				if(age_group=6){
+					location <- any_location_in (one_of(outside_gates));
+				} else {
+					location <- any_location_in (one_of(residential_buildings));
+				}
+				taffic_mode<<+ [int(data_people[3,i]),int(data_people[4,i]),int(data_people[5,i]),int(data_people[6,i]),int(data_people[7,i])];
+				start_work <- int(data_people[8,i]);
+				end_work <- int(data_people[9,i]);
+				living_place <- one_of(residential_buildings);
+				working_place <- one_of(industrial_buildings);
+				objective <- "resting";
+			}*/
 		}	
 		
 
@@ -166,20 +170,22 @@ global {
 		// add loop break function to distribute tram
 
 		}
-		create bus number:nb_bus+24*cycle;
+		create bus number:nb_bus{
+			location <- any_location_in (one_of(bus_network_graph));
+		}
 
 		//create car from the car file
 		int ratio_of_car<-1000;
 		matrix data_car <- matrix(text_file_car);
 		loop i from: 0 to: data_car.rows -1{
-			create car number: int(data_car[1,i])/ratio_of_car {
-			car_group <- int(i+1);
-			if(car_group=1){
-				location <- any_location_in (one_of(carpark_cbd));
-			} else {
-				location <- any_location_in (one_of(outside_gates));
-			}
-			}
+			/*create car number: int(data_car[1,i])/ratio_of_car {
+				car_group <- int(i+1);
+				if(car_group=1){
+					location <- any_location_in (one_of(carpark_cbd));
+				} else {
+					location <- any_location_in (one_of(outside_gates));
+				}
+			}*/
 		}
 		
 		
@@ -333,12 +339,12 @@ species tram skills:[advanced_driving] {
 		max_acceleration <- 3.5;
 	}
 	
-	reflex move when: current_date.hour between(5,24){
-		do wander on: tram_network_graph;
+	reflex move when: (current_date.hour between(5,24) and simpleSimulation){
+		  do wander on: tram_network_graph;	
 	}
 
 	aspect base {
-		draw box(20*scale, 3*scale,2*scale) rotate: heading color: rgb(0,64,255) ;
+		draw box(20*scale, 3*scale,2*scale) rotate: heading color: tram_color ;
 		draw box(10*scale, 3*scale,2.5*scale) rotate: heading color: #white ;
 	}
 }
@@ -359,18 +365,23 @@ species bus skills:[advanced_driving]{
 		target <- any_location_in(one_of(building));
 	}
 	//Reflex to move to the target building moving on the road network
-	reflex move when: target != nil {
-	//we use the return_path facet to return the path followed
-		path path_followed <- goto(target: target, on: bus_network_graph, recompute_path: false, return_path: true);
-
-		//if the path followed is not nil (i.e. the agent moved this step), we use it to increase the pollution level of overlapping cell
-		if (path_followed != nil and path_followed.shape != nil) {
-			cell[path_followed.shape.location] <- cell[path_followed.shape.location] + 10;					
-		}
-
-		if (location = target) {
-			target <- nil;
-		} }
+	reflex complexMove when: ((target != nil) and !simpleSimulation) {
+		    //we use the return_path facet to return the path followed
+			path path_followed <- goto(target: target, on: bus_network_graph, recompute_path: false, return_path: true);
+	
+			//if the path followed is not nil (i.e. the agent moved this step), we use it to increase the pollution level of overlapping cell
+			if (path_followed != nil and path_followed.shape != nil) {
+				cell[path_followed.shape.location] <- cell[path_followed.shape.location] + 10;					
+			}
+	
+			if (location = target) {
+				target <- nil;
+			} 		
+	}
+	
+	reflex simpleMove when:simpleSimulation{
+		do wander on: bus_network_graph;
+	}
 
 	aspect base {
 		draw rectangle(8*scale, 2*scale) rotate: heading color:bus_color;
@@ -413,7 +424,7 @@ species car skills:[advanced_driving] {
 species bike skills:[advanced_driving] {
 
 	//Reflex to move to the target building moving on the road network
-	reflex move {
+	reflex move when:simpleSimulation{
 	do wander on:bike_network_graph;
 	}
 
@@ -662,7 +673,7 @@ experiment cbd_toolkit_virtual type: gui autorun:true virtual:true{
 
 
 experiment cbd_toolkit_desktop type: gui autorun:true parent:cbd_toolkit_virtual{	
-	float minimum_cycle_duration<-0.05;
+	float minimum_cycle_duration<-0.01;
 	
 	output{
 		display table parent:Screen1{}
@@ -672,7 +683,7 @@ experiment cbd_toolkit_desktop type: gui autorun:true parent:cbd_toolkit_virtual
 
 
 experiment cbd_toolkit_demo type: gui autorun:true parent:cbd_toolkit_virtual{	
-	float minimum_cycle_duration<-0.05;
+	float minimum_cycle_duration<-0.01;
 	
 	output{
 		display table parent:Screen1 fullscreen:0{
