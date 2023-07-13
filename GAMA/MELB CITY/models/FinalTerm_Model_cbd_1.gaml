@@ -9,7 +9,7 @@ model FinalTermModelcbd1
 
 global {
 	file shape_file_buildings <- file("../includes/GIS/cbd_buildings.shp");
-	file shape_file_traffic <- file("../includes/GIS/cbd_networks.shp");
+	//file shape_file_traffic <- file("../includes/GIS/cbd_networks.shp");
 	file shape_file_cbd_traffic <- file("../includes/GIS/ryan/cbd_pedestrian_network_custom.shp");
 	file shape_file_bounds <- file("../includes/GIS/cbd_bounds.shp");
 	file shape_file_sensors <- file("../includes/GIS/cbd_sensors.shp");
@@ -24,9 +24,9 @@ global {
 	//date starting_date <- date("2023-07-09-00-00-00");
 	date starting_date <- date([2023,7,9,6,0,0]);
 	
-	int nb_tram <- 50;
-	int nb_bike <- 100;
-	int nb_bus <- 48;
+	int nb_tram <- 100;
+	int nb_bike <- 0;
+	int nb_bus <- 0;
 	float min_tram_speed <- 10.0 #km / #h;
 	float max_tram_speed <- 26.0 #km / #h;
 	int min_work_start <- 6;
@@ -147,8 +147,7 @@ global {
 		//create people from the demographic file
 		matrix data_people <- matrix(text_file_population);
 		loop i from: 0 to: data_people.rows -1{
-			
-			/*create people number:int(data_people[1,i])/10{
+			create people number:int(data_people[1,i])/100{
 				age_group <- int(i+1);
 				speed <- float(data_people[2,i]);
 				if(age_group=6){
@@ -162,7 +161,7 @@ global {
 				living_place <- one_of(residential_buildings);
 				working_place <- one_of(industrial_buildings);
 				objective <- "resting";
-			}*/
+			}
 		}	
 		
 
@@ -178,14 +177,14 @@ global {
 		int ratio_of_car<-1000;
 		matrix data_car <- matrix(text_file_car);
 		loop i from: 0 to: data_car.rows -1{
-			/*create car number: int(data_car[1,i])/ratio_of_car {
+			create car number: int(data_car[1,i])/ratio_of_car {
 				car_group <- int(i+1);
 				if(car_group=1){
 					location <- any_location_in (one_of(carpark_cbd));
 				} else {
 					location <- any_location_in (one_of(outside_gates));
 				}
-			}*/
+			}
 		}
 		
 		
@@ -348,6 +347,8 @@ species tram skills:[advanced_driving] {
 		draw box(10*scale, 3*scale,2.5*scale) rotate: heading color: #white ;
 	}
 }
+
+
 
 species bus skills:[advanced_driving]{
 	int scale<-3;
@@ -515,6 +516,21 @@ experiment cbd_toolkit_virtual type: gui autorun:true virtual:true{
                 {
                 	draw circle(15#px) at: { 20#px, y} color: rgb(z.key, 0.8) ;
                 	draw z.value at: { 60#px, y} color: rgb(z.key, 0.8)  font: font("Helvetica", 30, #bold);
+                	if(z.value="car"){
+                	  draw string(length(car)) at: { 125#px, y} color: rgb(z.key, 0.8)  font: font("Helvetica", 30, #bold);	
+                	}
+                	if(z.value="bike"){
+                	  draw string(length(bike)) at: {125#px, y} color: rgb(z.key, 0.8)  font: font("Helvetica", 30, #bold);	
+                	}
+                	if(z.value="tram"){
+                	  draw string(length(tram)) at: {125#px, y} color: rgb(z.key, 0.8)  font: font("Helvetica", 30, #bold);	
+                	}
+                	if(z.value="people"){
+                	  draw string(length(people)) at: {175#px, y} color: rgb(z.key, 0.8)  font: font("Helvetica", 30, #bold);	
+                	}
+                	if(z.value="bus"){
+                	  draw string(length(bus)) at: {125#px, y} color: rgb(z.key, 0.8)  font: font("Helvetica", 30, #bold);	
+                	}
                     y <- y + 40#px;
                 }
                 
@@ -559,7 +575,7 @@ experiment cbd_toolkit_virtual type: gui autorun:true virtual:true{
 	                loop type over: family_color.keys
 	                {
 	                    draw circle(5#px) at: { 20#px, y } color: family_color[type] border: #white;
-	                    draw type at: { 40#px, y + 4#px } color: text_color font: font("Helvetica", 18, #bold);
+	                    draw type at: {40#px, y + 4#px } color: text_color font: font("Helvetica", 18, #bold);
 	                    y <- y + 18#px;
 	                }
                 	
@@ -677,7 +693,7 @@ experiment cbd_toolkit_desktop type: gui autorun:true parent:cbd_toolkit_virtual
 	
 	output{
 		display table parent:Screen1{}
-		display screen parent:Screen2{}
+		//display screen parent:Screen2{}
 	}
 }
 
