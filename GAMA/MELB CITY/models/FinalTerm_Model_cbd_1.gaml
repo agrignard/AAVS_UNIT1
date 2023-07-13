@@ -26,6 +26,7 @@ global {
 	
 	int nb_tram <- 50;
 	int nb_bike <- 100;
+	int nb_bus <- 48;
 	float min_tram_speed <- 10.0 #km / #h;
 	float max_tram_speed <- 26.0 #km / #h;
 	int min_work_start <- 6;
@@ -58,6 +59,7 @@ global {
 	bool show_landuse<-false;
 	bool show_tram<-true;
 	bool show_car<-true;
+	bool show_bus<-true;
 	bool show_bike<-true;
 	bool show_people<-true;
 	bool show_network<-true;
@@ -73,11 +75,12 @@ global {
 	rgb background_color<-rgb(0,0,0);
 	rgb text_color<-rgb(255,255,255);
 	rgb building_color<-rgb(102,102,102);
-	rgb people_color<-rgb(255,255,255);
-	rgb car_color<-rgb(254, 65, 18);
-	rgb bike_color<-rgb(255,186,0);
+	rgb people_color<-rgb(255,222,94);
+	rgb car_color<-rgb(244,40,41);
+	rgb bus_color<-rgb(30,233,182);
+	rgb bike_color<-rgb(217,111,248);
 	rgb tram_color<-rgb(0,64,255);
-	rgb tree_color<-rgb(137,225,174);
+	rgb tree_color<-rgb(0,255,209);
 	float network_line_width<-1#px;
 	
 	
@@ -90,13 +93,14 @@ global {
 	font title <- font("Arial", 18, #bold);
 	
 	//TREE
-	map<string,rgb> uselif_color<-["61+ years"::#green, "31-60 years"::#blue, "21-30 years"::#yellow, "11-20 years"::#orange, "6-10 years (>50% canopy)"::#red, "6-10 years (<50% canopy)"::#red];
+	//map<string,rgb> uselif_color<-["61+ years"::rgb(161,106,69), "31-60 years"::#blue, "21-30 years"::#yellow, "11-20 years"::#orange, "6-10 years (>50% canopy)"::#red, "6-10 years (<50% canopy)"::#red];
+    map<string,rgb> uselif_color<-[''::rgb(30,233,182),"61+ years"::rgb(1,40,33), "31-60 years"::rgb(1,75,62), "21-30 years"::rgb(0,104,86), "11-20 years"::rgb(0,135,111), "6-10 years (>50% canopy)"::rgb(0,195,160), "6-10 years (<50% canopy)"::rgb(0,255,209)];
     map<string,rgb> family_color<- [];
 	
 	
 	//PLOT
 	map<rgb,string> legends_pie <- [rgb(71,42,22)::"car",rgb(161,106,69)::"bike", rgb(112,76,51)::"tram",rgb(237,179,140)::"bus",rgb(217,145,93)::"walk", rgb(244,169,160)::"other"];
-	map<rgb,string> legend_path <- [rgb (car_color)::"car",rgb(bike_color)::"bike",rgb(tram_color)::"tram", rgb(people_color)::"people"];
+	map<rgb,string> legend_path <- [rgb (car_color)::"car",rgb(bike_color)::"bike",rgb(tram_color)::"tram", rgb(people_color)::"people",rgb(bus_color)::"bus"];
 	
 	
 	
@@ -127,7 +131,7 @@ global {
 		list<string> families <- remove_duplicates(tree collect each.family);
 		loop f over:families{
 			if (f!=nil){
-			  family_color <+ string(f)::rnd_color(255);
+			  family_color <+ string(f)::rgb(0,255,209);
 			  	
 			}
 		}
@@ -159,6 +163,7 @@ global {
 		// add loop break function to distribute tram
 
 		}
+		create bus number:nb_bus+24*cycle;
 
 		//create car from the car file
 		int ratio_of_car<-1000;
@@ -222,13 +227,16 @@ species tree{
 	string useful_lif;
 	aspect base{
 		if(cycle+1899>year_plant){
-			draw circle(10) color:#green;
+			draw circle(10) color:tree_color;
 		}
 		
 	}
 	
 	aspect useful_lif{
-		draw circle(10) color:uselif_color[useful_lif];
+		
+			draw circle(10) color:uselif_color[useful_lif];
+		
+		
 	}
 	aspect family{
 		if (family !=nil){
@@ -328,6 +336,39 @@ species tram skills:[advanced_driving] {
 	}
 }
 
+species bus skills:[advanced_driving]{
+	int scale<-3;
+	init{
+		vehicle_length <- 15#m ;
+		max_speed <- 40 #km / #h;
+		max_acceleration <- 3.5;
+	}
+	int bus_group;
+	point target;
+	float leaving_proba <- 0.05;
+	string state;
+	
+	reflex leave when: (target = nil) and (flip(leaving_proba)) {
+		target <- any_location_in(one_of(building));
+	}
+	//Reflex to move to the target building moving on the road network
+	reflex move when: target != nil {
+	//we use the return_path facet to return the path followed
+		path path_followed <- goto(target: target, on: car_network_graph, recompute_path: false, return_path: true);
+
+		//if the path followed is not nil (i.e. the agent moved this step), we use it to increase the pollution level of overlapping cell
+		if (path_followed != nil and path_followed.shape != nil) {
+			cell[path_followed.shape.location] <- cell[path_followed.shape.location] + 10;					
+		}
+
+		if (location = target) {
+			target <- nil;
+		} }
+
+	aspect base {
+		draw rectangle(8*scale, 2*scale) rotate: heading color:bus_color;
+	}
+}
 species car skills:[advanced_driving] {
 	int scale<-3;
 	init {
@@ -390,6 +431,7 @@ experiment cbd_toolkit_virtual type: gui autorun:true virtual:true{
 			species tram aspect: base visible:show_tram;
 			species sensor aspect:base visible:show_sensor;
 			species car aspect: base visible:show_car;
+			species bus aspect: base visible:show_bus;
 			species bike aspect: base visible:show_bike;
 			species tree aspect: useful_lif visible:show_tree;
 		    species tree aspect: family visible:show_tree_family;
@@ -401,6 +443,7 @@ experiment cbd_toolkit_virtual type: gui autorun:true virtual:true{
 			event "t"  {show_tram<-!show_tram;}
 			event "c"  {show_car<-!show_car;}
 			event "b"  {show_bike<-!show_bike;}
+			event "u"  {show_bus<-!show_bus;}
 			event "n"  {show_network<-!show_network;}
 			event "p"  {show_people<-!show_people;}
 			event "s"  {show_sensor<-!show_sensor;}
@@ -408,7 +451,7 @@ experiment cbd_toolkit_virtual type: gui autorun:true virtual:true{
 			
 			overlay position: { 50#px,50#px} size: { 1 #px, 1 #px } background: # black border: #black rounded: false
 			{
-				draw "CBD ToolKIT v1.0" at: {0,0} color: text_color font: font("Helvetica", 50, #bold);
+				draw "CBD ToolKIT v1.0" at: {0,0} color: text_color font: font("Verdana", 50, #bold);
 				
 				draw "Date: " + current_date at: {0,50#px} color: text_color font: font("Helvetica", 20, #bold);
 				
@@ -432,6 +475,8 @@ experiment cbd_toolkit_virtual type: gui autorun:true virtual:true{
                 draw "(t)ram (" + show_tram + ")" at: { x,y} color: text_color font: font("Helvetica", uxTextSize, #bold);
                 y<-y+gapBetweenWord;
                 draw "(c)ar (" + show_car + ")" at: { x,y} color: text_color font: font("Helvetica", uxTextSize, #bold);
+                y<-y+gapBetweenWord;
+                draw "b(u)s (" + show_bus + ")" at: { x,y} color: text_color font: font("Helvetica", uxTextSize, #bold);
                 y<-y+gapBetweenWord;
                  draw "(b)ike (" + show_bike + ")" at: { x,y} color: text_color font: font("Helvetica", uxTextSize, #bold);
                 y<-y+gapBetweenWord;
@@ -476,7 +521,7 @@ experiment cbd_toolkit_virtual type: gui autorun:true virtual:true{
 	                loop type over: uselif_color.keys
 	                {
 	                    draw circle(10#px) at: { 20#px, y } color: uselif_color[type] border: #white;
-	                    draw type at: { 40#px, y + 4#px } color: # black font: font("Helvetica", 18, #bold);
+	                    draw type at: { 40#px, y + 4#px } color:text_color font: font("Helvetica", 18, #bold);
 	                    y <- y + 25#px;
 	                }
                 }
@@ -488,7 +533,7 @@ experiment cbd_toolkit_virtual type: gui autorun:true virtual:true{
 	                loop type over: family_color.keys
 	                {
 	                    draw circle(5#px) at: { 20#px, y } color: family_color[type] border: #white;
-	                    draw type at: { 40#px, y + 4#px } color: # black font: font("Helvetica", 18, #bold);
+	                    draw type at: { 40#px, y + 4#px } color: text_color font: font("Helvetica", 18, #bold);
 	                    y <- y + 18#px;
 	                }
                 	
