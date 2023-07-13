@@ -10,13 +10,15 @@ model FinalTermModelcbd1
 global {
 	file shape_file_buildings <- file("../includes/GIS/cbd_buildings.shp");
 	//file shape_file_traffic <- file("../includes/GIS/cbd_networks.shp");
-	file shape_file_cbd_traffic <- file("../includes/GIS/ryan/cbd_pedestrian_network_custom.shp");
+	file shape_file_cbd_traffic <- file("../includes/GIS/cbd_networks.shp");
+	//file shape_file_cbd_traffic <- file("../includes/GIS/ryan/cbd_pedestrian_network_custom.shp");
 	file shape_file_bounds <- file("../includes/GIS/cbd_bounds.shp");
 	file shape_file_sensors <- file("../includes/GIS/cbd_sensors.shp");
 	file point_file_outside_cbd <- file("../includes/GIS/cbd_coming_from_outside.shp");
 	file text_file_population <- file("../includes/data/Demographic_CBD.csv");
 	file text_file_car <- file("../includes/data/car_cbd.csv");
 	file shape_file_trees <- file("../includes/GIS/Tree/cbd_tree.shp");
+	file shape_file_hack <- file("../includes/GIS/hack.shp");
 	
 	geometry shape <- envelope(shape_file_bounds);
 	float step <- 10 #sec;
@@ -25,8 +27,8 @@ global {
 	date starting_date <- date([2023,7,9,6,0,0]);
 	
 	int nb_tram <- 100;
-	int nb_bike <- 0;
-	int nb_bus <- 0;
+	int nb_bike <- 100;
+	int nb_bus <- 50;
 	float min_tram_speed <- 10.0 #km / #h;
 	float max_tram_speed <- 26.0 #km / #h;
 	int min_work_start <- 6;
@@ -101,7 +103,9 @@ global {
 	//map<string,rgb> uselif_color<-["61+ years"::rgb(161,106,69), "31-60 years"::#blue, "21-30 years"::#yellow, "11-20 years"::#orange, "6-10 years (>50% canopy)"::#red, "6-10 years (<50% canopy)"::#red];
     map<string,rgb> uselif_color<-["61+ years"::rgb(1,40,33), "31-60 years"::rgb(1,75,62), "21-30 years"::rgb(0,104,86), "11-20 years"::rgb(0,135,111), 
     "6-10 years (>50% canopy)"::rgb(0,195,160), "6-10 years (<50% canopy)"::rgb(30,233,182),"1-5 years (<50% canopy)"::rgb(0,255,209),"<1 year"::rgb(173,250,240),''::rgb(255,255,255)];
-    map<string,rgb> family_color<- [];
+    map<string,string> family_int_to_group<- ["1"::"Broadleaf Trees ","2"::"Coniferous Trees ", "3"::"Palm and Tropical Trees ","4"::"Flower Trees "];
+    map<string,rgb> group_to_color<- ["1"::rgb(142,198,63) ,"2"::rgb(231,192,52) , "3"::rgb(244,154,182) ,"4"::rgb(93,40,118)];
+    
 	
 	
 	//PLOT
@@ -120,28 +124,38 @@ global {
 		
 		//create traffic system
 		create outside_gates from: point_file_outside_cbd;
-		create traffic_network from: shape_file_cbd_traffic with: [type::string(read ("type"))];
-		list<traffic_network> tramway <- traffic_network where (each.type="tram");
+		create traffic_network from: shape_file_cbd_traffic with: [type::string(read ("highway"))]{
+			if (type="tramway"){
+				mode<-"tram";
+			}
+			if (type="driveway"){
+				mode<-"car";
+			}
+			if (type="footway"){
+				mode<-"people";
+			}
+		}
+		ask traffic_network{
+			if (type!="tramway" and type!="footway" and type!="driveway"){
+				do die;
+			}
+		}
+		list<traffic_network> tramway <- traffic_network where (each.type="tramway");
 		tram_network_graph <- as_edge_graph (tramway);
-		list<traffic_network> pedestrianway <- traffic_network where (each.type="pedestrain");
+		list<traffic_network> pedestrianway <- traffic_network where (each.type="footway");
 		pedestrian_network_graph <- as_edge_graph (pedestrianway);
-		list<traffic_network> bikeway <- traffic_network where (each.type="pedestrain");
+		list<traffic_network> bikeway <- traffic_network where (each.type="driveway");
 		bike_network_graph <- as_edge_graph (bikeway);
-		list<traffic_network> carway <- traffic_network where (each.type="car");
+		list<traffic_network> carway <- traffic_network where (each.type="driveway");
 		car_network_graph <- as_edge_graph (carway);
-		list<traffic_network> busway <- traffic_network where (each.type="car");
+		list<traffic_network> busway <- traffic_network where (each.type="driveway");
 		bus_network_graph <- as_edge_graph (busway);
 		
 		
 		//create tree_canopy from: shape_file_trees;
 		create tree from: shape_file_trees;
 		list<string> families <- remove_duplicates(tree collect each.family);
-		loop f over:families{
-			if (f!=nil){
-			  family_color <+ string(f)::rnd_color(255);
-			  	
-			}
-		}
+
 		
 		
 		//create people from the demographic file
@@ -191,6 +205,8 @@ global {
 		create bike number:nb_bike;
 		
 		create sensor from:shape_file_sensors;
+		
+		create hack from:shape_file_hack;
 
 		
 	}
@@ -233,6 +249,9 @@ species tree{
 	int year_plant;
 	int diameter_b;
 	string useful_lif;
+	string group;
+	
+	
 	aspect base{
 		if(cycle+1899>year_plant){
 			draw circle(10) color:tree_color;
@@ -248,7 +267,7 @@ species tree{
 	}
 	aspect family{
 		if (family !=nil){
-		  draw circle(10) color:family_color[family];	
+		  draw circle(10) color:group_to_color[group];	
 		}
 		
 	}
@@ -256,6 +275,7 @@ species tree{
 
 species traffic_network{
 	string type;
+	string mode;
 	int path_group;
 	
 	//command display after right click
@@ -281,7 +301,7 @@ species traffic_network{
 	}
 	
 	aspect base {
-		draw shape color:path_type_color[type] width:network_line_width;
+		draw shape color:path_type_color[mode] width:network_line_width;
 	}
 }
 species outside_gates;
@@ -343,8 +363,8 @@ species tram skills:[advanced_driving] {
 	}
 
 	aspect base {
-		draw box(20*scale, 3*scale,2*scale) rotate: heading color: tram_color ;
-		draw box(10*scale, 3*scale,2.5*scale) rotate: heading color: #white ;
+		draw rectangle(20*scale, 3*scale) rotate: heading color: tram_color ;
+		draw rectangle(10*scale, 3*scale) rotate: heading color: #white ;
 	}
 }
 
@@ -434,6 +454,12 @@ species bike skills:[advanced_driving] {
 	}
 }
 
+species hack{
+	aspect base{
+		draw shape color:#black;
+	}
+}
+
 
 experiment cbd_toolkit_virtual type: gui autorun:true virtual:true{	
 	float minimum_cycle_duration<-0.05;
@@ -455,6 +481,7 @@ experiment cbd_toolkit_virtual type: gui autorun:true virtual:true{
 			species tree aspect: useful_lif visible:show_tree;
 		    species tree aspect: family visible:show_tree_family;
 			mesh cell scale: 9 triangulation: true transparency: 0.4 smooth: 3 above: 0.8 color: pal visible:show_heatmap;
+			species hack aspect:base;
 			
 			event "e"  {show_tree<-!show_tree;}
 			event "f"  {show_tree_family<-!show_tree_family;}
@@ -484,31 +511,33 @@ experiment cbd_toolkit_virtual type: gui autorun:true virtual:true{
                 float gapBetweenWord<-25#px;
                 float uxTextSize<-20.0;
                 
-                draw "UI/UX" at: { x,y} color: text_color font: font("Helvetica", uxTextSize*2, #bold);
+                //draw "GREEN SPACES" at: { x,y} color: text_color font: font("Helvetica", uxTextSize*2, #bold);
+                //y<-y+gapBetweenWord;
+                draw "TR(E)E LIFESPAN (" + show_tree + ")" at: { x,y} color: text_color font: font("Helvetica", uxTextSize, #bold);
                 y<-y+gapBetweenWord;
-                draw "tr(e)e (" + show_tree + ")" at: { x,y} color: text_color font: font("Helvetica", uxTextSize, #bold);
-                y<-y+gapBetweenWord;
-                draw "(f)amily (" + show_tree + ")" at: { x,y} color: text_color font: font("Helvetica", uxTextSize, #bold);
-                y<-y+gapBetweenWord;
-                y<-y+gapBetweenWord;
-                draw "(l)anduse (" + show_landuse + ")" at: { x,y} color: text_color font: font("Helvetica", uxTextSize, #bold);
-                y<-y+gapBetweenWord;
-                draw "(t)ram (" + show_tram + ")" at: { x,y} color: text_color font: font("Helvetica", uxTextSize, #bold);
-                y<-y+gapBetweenWord;
-                draw "(c)ar (" + show_car + ")" at: { x,y} color: text_color font: font("Helvetica", uxTextSize, #bold);
-                y<-y+gapBetweenWord;
-                draw "b(u)s (" + show_bus + ")" at: { x,y} color: text_color font: font("Helvetica", uxTextSize, #bold);
-                y<-y+gapBetweenWord;
-                 draw "(b)ike (" + show_bike + ")" at: { x,y} color: text_color font: font("Helvetica", uxTextSize, #bold);
-                y<-y+gapBetweenWord;
-                draw "(n)etwork (" + show_network + ")" at: { x,y} color: text_color font: font("Helvetica", uxTextSize, #bold);
-                y<-y+gapBetweenWord;
-                draw "(p)eople (" + show_people + ")" at: { x,y} color: text_color font: font("Helvetica", uxTextSize, #bold);
+                draw "TREE (F)AMILY (" + show_tree_family + ")" at: { x,y} color: text_color font: font("Helvetica", uxTextSize, #bold);
                 y<-y+gapBetweenWord;
                 y<-y+gapBetweenWord;
-                draw "(s)ensor (" + show_sensor + ")" at: { x,y} color: text_color font: font("Helvetica", uxTextSize, #bold);
+                draw "(L)ANDUSE (" + show_landuse + ")" at: { x,y} color: text_color font: font("Helvetica", uxTextSize, #bold);
                 y<-y+gapBetweenWord;
-                draw "(h)eatmap (" + show_heatmap + ")" at: { x,y} color: text_color font: font("Helvetica", uxTextSize, #bold);
+                y<-y+gapBetweenWord;
+                draw "(P)EOPLE (" + show_people + ")" at: { x,y} color: text_color font: font("Helvetica", uxTextSize, #bold);
+                y<-y+gapBetweenWord;
+                draw "(T)RAM (" + show_tram + ")" at: { x,y} color: text_color font: font("Helvetica", uxTextSize, #bold);
+                y<-y+gapBetweenWord;
+                draw "(C)AR (" + show_car + ")" at: { x,y} color: text_color font: font("Helvetica", uxTextSize, #bold);
+                y<-y+gapBetweenWord;
+                draw "B(U)S (" + show_bus + ")" at: { x,y} color: text_color font: font("Helvetica", uxTextSize, #bold);
+                y<-y+gapBetweenWord;
+                draw "(B)IKE (" + show_bike + ")" at: { x,y} color: text_color font: font("Helvetica", uxTextSize, #bold);
+                y<-y+gapBetweenWord;
+                draw "(N)ETWORK (" + show_network + ")" at: { x,y} color: text_color font: font("Helvetica", uxTextSize, #bold);
+                y<-y+gapBetweenWord;
+                
+                y<-y+gapBetweenWord;
+                draw "(S)ENSOR (" + show_sensor + ")" at: { x,y} color: text_color font: font("Helvetica", uxTextSize, #bold);
+                y<-y+gapBetweenWord;
+                draw "(H)EATMAP (" + show_heatmap + ")" at: { x,y} color: text_color font: font("Helvetica", uxTextSize, #bold);
                 y<-y+gapBetweenWord;
                 
                 
@@ -574,17 +603,18 @@ experiment cbd_toolkit_virtual type: gui autorun:true virtual:true{
                 	 draw "TREE SPECIES" at: { 60#px, y} color: text_color font: font("Helvetica", 32, #bold);
             		//for each possible type, we draw a square with the corresponding color and we write the name of the type
    					y <- y + 40#px;
-	                loop type over: family_color.keys
+	                loop g over: group_to_color.keys
 	                {
-	                    draw circle(5#px) at: { 20#px, y } color: family_color[type] border: #white;
-	                    draw type at: {40#px, y + 4#px } color: text_color font: font("Helvetica", 18, #bold);
-	                    y <- y + 18#px;
+	                    draw circle(10#px) at: { 20#px, y } color: group_to_color[g] border: #white;
+	                    draw family_int_to_group[g] at: {40#px, y + 4#px } color: text_color font: font("Helvetica", 18, #bold);
+	                     y <- y + 25#px;	
 	                }
                 	
                 }
                
                 
 			}	
+		
 		}
 		
 		
@@ -593,9 +623,9 @@ experiment cbd_toolkit_virtual type: gui autorun:true virtual:true{
 		{
 			overlay position: { 50#px,50#px} size: { 1 #px, 1 #px } background: # black border: #black rounded: false
 			{
-			    draw image_file('../includes/interface/cbdlogov1.png') at: { 200#px, 50#px } size:{367.5#px,75#px};
+			    draw image_file('../includes/interface/cbdlogov1.png') at: { 200#px, 25#px } size:{367.5#px,75#px};
 			    
-			    draw "Date: " + current_date at: {0,250#px} color: text_color font: font("Helvetica", 20, #bold);
+			    //draw "Date: " + current_date at: {0,250#px} color: text_color font: font("Helvetica", 20, #bold);
 			}
 			
 			
