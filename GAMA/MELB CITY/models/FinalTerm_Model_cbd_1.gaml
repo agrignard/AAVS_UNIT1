@@ -589,9 +589,9 @@ experiment cbd_toolkit_virtual type: gui autorun:true virtual:true{
                 draw "(N)ETWORK (" + show_network + ")" at: { x,y} color: text_color font: font(myFont, uxTextSize, #bold);
                 y<-y+gapBetweenWord;
                 
-                y<-y+gapBetweenWord;
+                /*y<-y+gapBetweenWord;
                 draw "(S)ENSOR (" + show_sensor + ")" at: { x,y} color: text_color font: font(myFont, uxTextSize, #bold);
-                y<-y+gapBetweenWord;
+                y<-y+gapBetweenWord;*/
                 draw "(H)EATMAP (" + show_heatmap + ")" at: { x,y} color: text_color font: font(myFont, uxTextSize, #bold);
                 y<-y+gapBetweenWord;
                 
