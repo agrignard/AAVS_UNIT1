@@ -94,7 +94,8 @@ global {
 	
 	//TREE
 	//map<string,rgb> uselif_color<-["61+ years"::rgb(161,106,69), "31-60 years"::#blue, "21-30 years"::#yellow, "11-20 years"::#orange, "6-10 years (>50% canopy)"::#red, "6-10 years (<50% canopy)"::#red];
-    map<string,rgb> uselif_color<-[''::rgb(30,233,182),"61+ years"::rgb(1,40,33), "31-60 years"::rgb(1,75,62), "21-30 years"::rgb(0,104,86), "11-20 years"::rgb(0,135,111), "6-10 years (>50% canopy)"::rgb(0,195,160), "6-10 years (<50% canopy)"::rgb(0,255,209)];
+    map<string,rgb> uselif_color<-["61+ years"::rgb(1,40,33), "31-60 years"::rgb(1,75,62), "21-30 years"::rgb(0,104,86), "11-20 years"::rgb(0,135,111), 
+    "6-10 years (>50% canopy)"::rgb(0,195,160), "6-10 years (<50% canopy)"::rgb(30,233,182),"1-5 years (<50% canopy)"::rgb(0,255,209),"<1 year"::rgb(173,250,240),''::rgb(255,255,255)];
     map<string,rgb> family_color<- [];
 	
 	
@@ -131,7 +132,7 @@ global {
 		list<string> families <- remove_duplicates(tree collect each.family);
 		loop f over:families{
 			if (f!=nil){
-			  family_color <+ string(f)::rgb(0,255,209);
+			  family_color <+ string(f)::rnd_color(255);
 			  	
 			}
 		}
@@ -437,7 +438,7 @@ experiment cbd_toolkit_virtual type: gui autorun:true virtual:true{
 		    species tree aspect: family visible:show_tree_family;
 			mesh cell scale: 9 triangulation: true transparency: 0.4 smooth: 3 above: 0.8 color: pal visible:show_heatmap;
 			
-			event "a"  {show_tree<-!show_tree;}
+			event "e"  {show_tree<-!show_tree;}
 			event "f"  {show_tree_family<-!show_tree_family;}
 			event "l"  {show_landuse<-!show_landuse;}
 			event "t"  {show_tram<-!show_tram;}
@@ -465,7 +466,7 @@ experiment cbd_toolkit_virtual type: gui autorun:true virtual:true{
                 
                 draw "UI/UX" at: { x,y} color: text_color font: font("Helvetica", uxTextSize*2, #bold);
                 y<-y+gapBetweenWord;
-                draw "(a)rbre (" + show_tree + ")" at: { x,y} color: text_color font: font("Helvetica", uxTextSize, #bold);
+                draw "tr(e)e (" + show_tree + ")" at: { x,y} color: text_color font: font("Helvetica", uxTextSize, #bold);
                 y<-y+gapBetweenWord;
                 draw "(f)amily (" + show_tree + ")" at: { x,y} color: text_color font: font("Helvetica", uxTextSize, #bold);
                 y<-y+gapBetweenWord;
@@ -520,9 +521,17 @@ experiment cbd_toolkit_virtual type: gui autorun:true virtual:true{
 	            	//for each possible type, we draw a square with the corresponding color and we write the name of the type
 	                loop type over: uselif_color.keys
 	                {
-	                    draw circle(10#px) at: { 20#px, y } color: uselif_color[type] border: #white;
-	                    draw type at: { 40#px, y + 4#px } color:text_color font: font("Helvetica", 18, #bold);
-	                    y <- y + 25#px;
+	                    
+	                    if(type=''){
+	                     draw circle(10#px) at: { 20#px, y } color: uselif_color[type] border: #white;
+	                     draw "Unknown" at: { 40#px, y + 4#px } color:text_color font: font("Helvetica", 18, #bold);
+	                     y <- y + 25#px;	
+	                    }else{
+	                    	draw circle(10#px) at: { 20#px, y } color: uselif_color[type] border: #white;
+	                        draw type at: { 40#px, y + 4#px } color:text_color font: font("Helvetica", 18, #bold);
+	                        y <- y + 25#px;
+	                    }
+	                    
 	                }
                 }
                 if (show_tree_family){
