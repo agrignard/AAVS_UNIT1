@@ -472,7 +472,7 @@ experiment cbd_toolkit_virtual type: gui autorun:true virtual:true{
 			overlay position: { 50#px,50#px} size: { 1 #px, 1 #px } background: # black border: #black rounded: false
 			{
 	
-				draw image_file('../includes/interface/cbdlogov1.png') at: { 500#px,50#px } size:{735#px,150#px};
+				draw image_file('../includes/interface/cbdlogov1.png') at: { 200#px,50#px } size:{367.5#px,75#px};
 				
 				draw "Date: " + current_date at: {0,200#px} color: text_color font: font("Helvetica", 20, #bold);
 				
@@ -593,7 +593,8 @@ experiment cbd_toolkit_virtual type: gui autorun:true virtual:true{
 		{
 			overlay position: { 50#px,50#px} size: { 1 #px, 1 #px } background: # black border: #black rounded: false
 			{
-			    draw image_file('../includes/interface/cbdlogov1.png') at: { 500#px, 50#px } size:{735#px,150#px};
+			    draw image_file('../includes/interface/cbdlogov1.png') at: { 200#px, 50#px } size:{367.5#px,75#px};
+			    
 			    draw "Date: " + current_date at: {0,250#px} color: text_color font: font("Helvetica", 20, #bold);
 			}
 			
