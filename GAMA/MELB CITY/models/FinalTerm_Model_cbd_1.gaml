@@ -112,15 +112,20 @@ global {
 	map<rgb,string> legends_pie <- [rgb(71,42,22)::"car",rgb(161,106,69)::"bike", rgb(112,76,51)::"tram",rgb(237,179,140)::"bus",rgb(217,145,93)::"walk", rgb(244,169,160)::"other"];
 	map<rgb,string> legend_path <- [rgb (car_color)::"car",rgb(bike_color)::"bike",rgb(tram_color)::"tram", rgb(people_color)::"people",rgb(bus_color)::"bus"];
 	
+	//
+	string myFont<-"Verdana";
+	list<building> residential_buildings;
+	list<building> industrial_buildings;
+	list<building> carpark_cbd;
 	
 	
 	init {
 		//create building
 		create building from: shape_file_buildings with: [type::string(read ("type"))] ;
 		
-		list<building> residential_buildings <- building where (each.type="residential" or each.type="mixed");
-		list<building> industrial_buildings <- building  where (each.type="work" or each.type="university" or each.type="mixed") ;
-		list<building> carpark_cbd <- building  where (each.type="residential" or each.type="mixed" or each.type="carpark");
+		residential_buildings <- building where (each.type="residential" or each.type="mixed");
+		industrial_buildings <- building  where (each.type="work" or each.type="university" or each.type="mixed") ;
+		carpark_cbd <- building  where (each.type="residential" or each.type="mixed" or each.type="carpark");
 		
 		//create traffic system
 		create outside_gates from: point_file_outside_cbd;
@@ -217,6 +222,25 @@ global {
 	
 		//diffuse the pollutions to neighbor cells
 		diffuse var: pollution on: cell proportion: 0.9;
+	}
+	
+	reflex updateCar{
+		ask rnd(2) among car{
+			do die;
+		}
+		create car number: rnd(2) {
+			
+					location <- any_location_in (one_of(carpark_cbd));
+			
+			}
+	}
+	reflex updateBike{
+		ask rnd(2) among bike{
+			do die;
+		}
+		create bike number: rnd(2) {
+			location <- any_location_in (one_of(carpark_cbd));	
+	    }
 	}
 }
 
@@ -413,16 +437,20 @@ species car skills:[advanced_driving] {
 	}
 	int car_group;
 	point target;
-	float leaving_proba <- 0.5;
+	float leaving_proba <- 1.0;
 	string state;
 	
 	reflex leave when: (target = nil) and (flip(leaving_proba)) {
-		target <- any_location_in(one_of(building));
+		
+		target <- any_location_in(one_of(traffic_network));
 	}
 	//Reflex to move to the target building moving on the road network
 	reflex move when: target != nil {
 	//we use the return_path facet to return the path followed
-		path path_followed <- goto(target: target, on: car_network_graph, recompute_path: false, return_path: true);
+		path path_followed <- goto(target: target, on: car_network_graph, recompute_path: true, return_path: true);
+	    if(length(path_followed.edges)=0){
+			target <- any_location_in(one_of(traffic_network));
+		}
 
 		//if the path followed is not nil (i.e. the agent moved this step), we use it to increase the pollution level of overlapping cell
 		if (path_followed != nil and path_followed.shape != nil) {
@@ -433,6 +461,7 @@ species car skills:[advanced_driving] {
 			target <- nil;
 		} 
 	}
+	
 
 	aspect base {
 		draw rectangle(5*scale, 2*scale) rotate: heading color:car_color ;
@@ -498,7 +527,7 @@ experiment cbd_toolkit_virtual type: gui autorun:true virtual:true{
 	
 				draw image_file('../includes/interface/cbdlogov1.png') at: { 200#px,50#px } size:{367.5#px,75#px};
 				
-				draw "Date: " + current_date at: {0,200#px} color: text_color font: font("Helvetica", 20, #bold);
+				draw "Date: " + current_date at: {0,200#px} color: text_color font: font(myFont, 20, #bold);
 				
                 
                 point UX_Position<-{world.shape.width*1.25,0#px};
@@ -508,68 +537,68 @@ experiment cbd_toolkit_virtual type: gui autorun:true virtual:true{
                 float gapBetweenWord<-25#px;
                 float uxTextSize<-20.0;
                 
-                //draw "GREEN SPACES" at: { x,y} color: text_color font: font("Helvetica", uxTextSize*2, #bold);
+                //draw "GREEN SPACES" at: { x,y} color: text_color font: font(myFont, uxTextSize*2, #bold);
                 //y<-y+gapBetweenWord;
-                draw "TR(E)E LIFESPAN (" + show_tree + ")" at: { x,y} color: text_color font: font("Helvetica", uxTextSize, #bold);
+                draw "TR(E)E LIFESPAN (" + show_tree + ")" at: { x,y} color: text_color font: font(myFont, uxTextSize, #bold);
                 y<-y+gapBetweenWord;
-                draw "TREE (F)AMILY (" + show_tree_family + ")" at: { x,y} color: text_color font: font("Helvetica", uxTextSize, #bold);
-                y<-y+gapBetweenWord;
-                y<-y+gapBetweenWord;
-                draw "(L)ANDUSE (" + show_landuse + ")" at: { x,y} color: text_color font: font("Helvetica", uxTextSize, #bold);
+                draw "TREE (F)AMILY (" + show_tree_family + ")" at: { x,y} color: text_color font: font(myFont, uxTextSize, #bold);
                 y<-y+gapBetweenWord;
                 y<-y+gapBetweenWord;
-                draw "(P)EOPLE (" + show_people + ")" at: { x,y} color: text_color font: font("Helvetica", uxTextSize, #bold);
+                draw "(L)ANDUSE (" + show_landuse + ")" at: { x,y} color: text_color font: font(myFont, uxTextSize, #bold);
                 y<-y+gapBetweenWord;
-                draw "(T)RAM (" + show_tram + ")" at: { x,y} color: text_color font: font("Helvetica", uxTextSize, #bold);
                 y<-y+gapBetweenWord;
-                draw "(C)AR (" + show_car + ")" at: { x,y} color: text_color font: font("Helvetica", uxTextSize, #bold);
+                draw "(P)EOPLE (" + show_people + ")" at: { x,y} color: text_color font: font(myFont, uxTextSize, #bold);
                 y<-y+gapBetweenWord;
-                draw "B(U)S (" + show_bus + ")" at: { x,y} color: text_color font: font("Helvetica", uxTextSize, #bold);
+                draw "(T)RAM (" + show_tram + ")" at: { x,y} color: text_color font: font(myFont, uxTextSize, #bold);
                 y<-y+gapBetweenWord;
-                draw "(B)IKE (" + show_bike + ")" at: { x,y} color: text_color font: font("Helvetica", uxTextSize, #bold);
+                draw "(C)AR (" + show_car + ")" at: { x,y} color: text_color font: font(myFont, uxTextSize, #bold);
                 y<-y+gapBetweenWord;
-                draw "(N)ETWORK (" + show_network + ")" at: { x,y} color: text_color font: font("Helvetica", uxTextSize, #bold);
+                draw "B(U)S (" + show_bus + ")" at: { x,y} color: text_color font: font(myFont, uxTextSize, #bold);
                 y<-y+gapBetweenWord;
-                
+                draw "(B)IKE (" + show_bike + ")" at: { x,y} color: text_color font: font(myFont, uxTextSize, #bold);
                 y<-y+gapBetweenWord;
-                draw "(S)ENSOR (" + show_sensor + ")" at: { x,y} color: text_color font: font("Helvetica", uxTextSize, #bold);
-                y<-y+gapBetweenWord;
-                draw "(H)EATMAP (" + show_heatmap + ")" at: { x,y} color: text_color font: font("Helvetica", uxTextSize, #bold);
+                draw "(N)ETWORK (" + show_network + ")" at: { x,y} color: text_color font: font(myFont, uxTextSize, #bold);
                 y<-y+gapBetweenWord;
                 
+                y<-y+gapBetweenWord;
+                draw "(S)ENSOR (" + show_sensor + ")" at: { x,y} color: text_color font: font(myFont, uxTextSize, #bold);
+                y<-y+gapBetweenWord;
+                draw "(H)EATMAP (" + show_heatmap + ")" at: { x,y} color: text_color font: font(myFont, uxTextSize, #bold);
+                y<-y+gapBetweenWord;
                 
-                draw "MODE" at: { 60#px, y} color: text_color  font: font("Helvetica", 30, #bold);
+                
+                draw "MODE" at: { 60#px, y} color: text_color  font: font(myFont, 30, #bold);
                 y <- y + 40#px;
                 loop z over: legend_path.pairs
                 {
                 	draw circle(15#px) at: { 20#px, y} color: rgb(z.key, 0.8) ;
-                	draw z.value at: { 60#px, y} color: rgb(z.key, 0.8)  font: font("Helvetica", 30, #bold);
+                	draw z.value at: { 60#px, y} color: rgb(z.key, 0.8)  font: font(myFont, 30, #bold);
                 	if(z.value="car"){
-                	  draw string(length(car)) at: { 125#px, y} color: rgb(z.key, 0.8)  font: font("Helvetica", 30, #bold);	
+                	  draw string(length(car)) at: { 125#px, y} color: rgb(z.key, 0.8)  font: font(myFont, 30, #bold);	
                 	}
                 	if(z.value="bike"){
-                	  draw string(length(bike)) at: {125#px, y} color: rgb(z.key, 0.8)  font: font("Helvetica", 30, #bold);	
+                	  draw string(length(bike)) at: {135#px, y} color: rgb(z.key, 0.8)  font: font(myFont, 30, #bold);	
                 	}
                 	if(z.value="tram"){
-                	  draw string(length(tram)) at: {125#px, y} color: rgb(z.key, 0.8)  font: font("Helvetica", 30, #bold);	
+                	  draw string(length(tram)) at: {135#px, y} color: rgb(z.key, 0.8)  font: font(myFont, 30, #bold);	
                 	}
                 	if(z.value="people"){
-                	  draw string(length(people)) at: {175#px, y} color: rgb(z.key, 0.8)  font: font("Helvetica", 30, #bold);	
+                	  draw string(length(people)) at: {175#px, y} color: rgb(z.key, 0.8)  font: font(myFont, 30, #bold);	
                 	}
                 	if(z.value="bus"){
-                	  draw string(length(bus)) at: {125#px, y} color: rgb(z.key, 0.8)  font: font("Helvetica", 30, #bold);	
+                	  draw string(length(bus)) at: {125#px, y} color: rgb(z.key, 0.8)  font: font(myFont, 30, #bold);	
                 	}
                     y <- y + 40#px;
                 }
                 
                 if (show_landuse){
                 	y <- y + 40#px;
-                	draw "LANDUSE" at: { 60#px, y} color: text_color  font: font("Helvetica", 30, #bold);
+                	draw "LANDUSE" at: { 60#px, y} color: text_color  font: font(myFont, 30, #bold);
                 	y <- y + 40#px;
                 	loop l over: landuse_color.pairs
                     {
                 	draw square(15#px) at: { 20#px, y} color: rgb(l.value, 0.8) ;
-                	draw l.key at: { 60#px, y} color: rgb(l.value, 0.8)  font: font("Helvetica", 30, #bold);
+                	draw l.key at: { 60#px, y} color: rgb(l.value, 0.8)  font: font(myFont, 30, #bold);
                     y <- y + 40#px;
                     }
                 	
@@ -577,7 +606,7 @@ experiment cbd_toolkit_virtual type: gui autorun:true virtual:true{
                 
                 if(show_tree){
                 	y <- y + 40#px;
-                	draw "TREE LIFESPAN" at: { 60#px, y} color: text_color font: font("Helvetica", 30, #bold);
+                	draw "TREE LIFESPAN" at: { 60#px, y} color: text_color font: font(myFont, 30, #bold);
                 	y <- y + 40#px;
 	            	//for each possible type, we draw a square with the corresponding color and we write the name of the type
 	                loop type over: uselif_color.keys
@@ -585,11 +614,11 @@ experiment cbd_toolkit_virtual type: gui autorun:true virtual:true{
 	                    
 	                    if(type=''){
 	                     draw circle(10#px) at: { 20#px, y } color: uselif_color[type] border: #white;
-	                     draw "Unknown" at: { 40#px, y + 4#px } color:text_color font: font("Helvetica", 18, #bold);
+	                     draw "Unknown" at: { 40#px, y + 4#px } color:text_color font: font(myFont, 18, #bold);
 	                     y <- y + 25#px;	
 	                    }else{
 	                    	draw circle(10#px) at: { 20#px, y } color: uselif_color[type] border: #white;
-	                        draw type at: { 40#px, y + 4#px } color:text_color font: font("Helvetica", 18, #bold);
+	                        draw type at: { 40#px, y + 4#px } color:text_color font: font(myFont, 18, #bold);
 	                        y <- y + 25#px;
 	                    }
 	                    
@@ -597,13 +626,13 @@ experiment cbd_toolkit_virtual type: gui autorun:true virtual:true{
                 }
                 if (show_tree_family){
                 	 y <- y + 40#px;
-                	 draw "TREE SPECIES" at: { 60#px, y} color: text_color font: font("Helvetica", 32, #bold);
+                	 draw "TREE SPECIES" at: { 60#px, y} color: text_color font: font(myFont, 32, #bold);
             		//for each possible type, we draw a square with the corresponding color and we write the name of the type
    					y <- y + 40#px;
 	                loop g over: group_to_color.keys
 	                {
 	                    draw circle(10#px) at: { 20#px, y } color: group_to_color[g] border: #white;
-	                    draw family_int_to_group[g] at: {40#px, y + 4#px } color: text_color font: font("Helvetica", 18, #bold);
+	                    draw family_int_to_group[g] at: {40#px, y + 4#px } color: text_color font: font(myFont, 18, #bold);
 	                     y <- y + 25#px;	
 	                }
                 	
@@ -620,10 +649,10 @@ experiment cbd_toolkit_virtual type: gui autorun:true virtual:true{
 		{
 			overlay position: { 50#px,50#px} size: { 1 #px, 1 #px } background: # black border: #black rounded: false
 			{
-			    draw "CBD ToolKIT v1.0" at: {0,0} color: text_color font: font("Helvetica", 50, #bold);
+			    draw "CBD ToolKIT v1.0" at: {0,0} color: text_color font: font(myFont, 50, #bold);
 			    //draw image_file('../includes/interface/cbdlogov1.png') at: { 200#px, 25#px } size:{367.5#px,75#px};
 			    
-			    //draw "Date: " + current_date at: {0,250#px} color: text_color font: font("Helvetica", 20, #bold);
+			    //draw "Date: " + current_date at: {0,250#px} color: text_color font: font(myFont, 20, #bold);
 			}
 			
 			
