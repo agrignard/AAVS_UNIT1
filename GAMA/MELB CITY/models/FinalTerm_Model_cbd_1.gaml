@@ -554,7 +554,7 @@ experiment cbd_toolkit_virtual type: gui autorun:true virtual:true{
 		
 		
 		
-		display Screen2 type: 2d virtual:true background:background_color
+		display Screen2 type: 2d virtual:true background:background_color antialias:true 
 		{
 			overlay position: { 50#px,50#px} size: { 1 #px, 1 #px } background: # black border: #black rounded: false
 			{
