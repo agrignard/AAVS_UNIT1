@@ -598,7 +598,7 @@ experiment cbd_toolkit_virtual type: gui autorun:true virtual:true{
 			
 			chart "Mode of Transport proportion" type: pie style: ring background: background_color color: rgb(236,102,45) label_text_color: rgb(236,102,45)  axes: #red  title_font: font( 'BrownPro', 32.0, #plain)
 			tick_font: font('BrownPro' , 14, #plain) label_font: font('BrownPro', 32 #plain) x_label: 'Nice Xlabel' y_label:
-			'Nice Ylabel' size:{0.42,0.42} position:{0,0.1}  label_background_color: background_color tick_line_color: rgb(255,255,255)
+			'Nice Ylabel' size:{0.42,0.42} position:{0,0.1}  label_background_color: background_color tick_line_color: rgb(255,255,255) memorize:false
 			legend_font: font('BrownPro' , 14, #plain) 
 			
 			{
@@ -613,35 +613,35 @@ experiment cbd_toolkit_virtual type: gui autorun:true virtual:true{
 			
 			chart "Pollution Level" type:histogram   size:{0.42,0.42} position:{0.55,0.1} background: background_color color: rgb(236,102,45)
 			tick_font: font('BrownPro' , 14, #plain) label_text_color: rgb(236,102,45) title_font: font( 'BrownPro', 32.0, #plain) 
-			label_font: font('BrownPro', 14 #plain) legend_font: font('BrownPro' , 14, #plain) 
+			label_font: font('BrownPro', 14 #plain) legend_font: font('BrownPro' , 14, #plain) memorize:false
 			x_serie_labels: ["categ1","Mode of Transport"]
 			style:"3d"
 			series_label_position: xaxis
 			{
 				data "Walk" value:(100+cycle)
-				accumulate_values: true						
+				accumulate_values: false						
 			    color:rgb(217,145,93);
 			    
 				data "Bike" value:(100+cycle)
-				accumulate_values: true						
+				accumulate_values: false						
 				color: rgb(161,106,69);
 			    
 				data "Tram" value:(24*55*1+cycle)
-				accumulate_values: true						
+				accumulate_values: false						
 				color: rgb(112,76,51);
 				
 				data "Car" value:(length(car)*3)
-				accumulate_values: true						
+				accumulate_values: false						
 				color: rgb(71,42,22);
 				
 				data "Reduced by Trees" value:(length(tree_canopy)*1)
-				accumulate_values: true						
+				accumulate_values: false						
 				color: rgb(244,216,189);
 			}
 			
 			chart "Demography" type: pie style: ring background: background_color color: rgb(236,102,45) label_text_color: rgb(236,102,45)  axes: #red  title_font: font( 'BrownPro', 32.0, #plain)
 			tick_font: font('BrownPro' , 14, #plain) label_font: font('BrownPro', 32 #plain) x_label: 'Nice Xlabel' y_label:
-			'Nice Ylabel' size:{0.42,0.42} position:{0,0.55}  label_background_color: background_color tick_line_color: rgb(255,255,255)
+			'Nice Ylabel' size:{0.42,0.42} position:{0,0.55}  label_background_color: background_color tick_line_color: rgb(255,255,255) memorize:false
 			legend_font: font('BrownPro' , 14, #plain) 
 			
 			{
@@ -656,29 +656,29 @@ experiment cbd_toolkit_virtual type: gui autorun:true virtual:true{
 			
 			chart "Tree Canopy Coverage" type:histogram   size:{0.42,0.42} position:{0.55,0.55} background: background_color color: rgb(236,102,45)
 			tick_font: font('BrownPro' , 14, #plain) label_text_color: rgb(236,102,45) title_font: font( 'BrownPro', 32.0, #plain) 
-			label_font: font('BrownPro', 14 #plain)  legend_font: font('BrownPro' , 14, #plain) 
+			label_font: font('BrownPro', 14 #plain)  legend_font: font('BrownPro' , 14, #plain) memorize:false
 			x_serie_labels: ["categ1","Mode of Transport"]
 			style:"3d"
 			series_label_position: xaxis
 			{
 				data "1743" value:(length(tree_canopy)*20)
-				accumulate_values: true						
+				accumulate_values: false						
 			    color:rgb(217,145,93);
 			    
 				data "1900" value:(length(tree_canopy)*3)
-				accumulate_values: true						
+				accumulate_values: false						
 				color: rgb(161,106,69);
 			    
 				data "Now" value:(length(tree_canopy)*5)
-				accumulate_values: true						
+				accumulate_values: false						
 				color: rgb(112,76,51);
 				
 				data "Try it!" value:(length(tree_canopy)*8)
-				accumulate_values: true						
+				accumulate_values: false						
 				color: rgb(71,42,22);
 				
 				data "2040" value:(length(tree_canopy)*10)
-				accumulate_values: true						
+				accumulate_values: false						
 				color: rgb(244,216,189);
 			}
 
@@ -693,7 +693,7 @@ experiment cbd_toolkit_desktop type: gui autorun:true parent:cbd_toolkit_virtual
 	
 	output{
 		display table parent:Screen1{}
-		//display screen parent:Screen2{}
+		display screen parent:Screen2{}
 	}
 }
 
